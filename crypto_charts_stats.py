@@ -71,7 +71,6 @@ btcusd_data["111_movingaverage"] = pd.Series.rolling(
 # # # end - data processing # # #
 
 st.title("Crypto Charts")
-st.dataframe(btcusd_data)
 
 fig = go.Figure(
     data=go.Scatter(
@@ -219,4 +218,8 @@ fig.update_layout(
     title="Pi Cycle Top Indicator BTC/FED Total Assets"
 )
 
-fig
+st.plotly_chart(fig)
+
+
+
+st.dataframe(btcusd_data)
