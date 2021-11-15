@@ -1,10 +1,8 @@
 import matplotlib.pyplot as plt
-from wordcloud import WordCloud, STOPWORDS
 from datetime import datetime, timedelta
 import plotly.graph_objects as go
 import datetime
 import pandas as pd
-import tweepy
 import csv
 import os
 import time
@@ -122,7 +120,6 @@ st.plotly_chart(fig)
 
 
 # run_it = st.sidebar.button('Show visualizations')
-st.sidebar.text("")
 
 # TODO: Future integrate ETH
 # display_name_all_twitter_user_scraped_csvs, all_twitter_user_scraped_csvs = get_all_stored_crypto_csvs()
@@ -219,7 +216,6 @@ fig.update_layout(
 )
 
 st.plotly_chart(fig)
-
 
 
 st.dataframe(btcusd_data)
