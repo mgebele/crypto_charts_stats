@@ -14,6 +14,11 @@ import plotly.graph_objects as go
 import numpy as np
 import streamlit as st
 st.set_page_config(layout="wide")
+# %%
+from fredapi import Fred
+
+fred = Fred(api_key=api_key_fred)
+
 
 quandl_api_key = os.environ['quandl_api_key']
 
@@ -218,4 +223,183 @@ fig.update_layout(
 st.plotly_chart(fig)
 
 
-st.dataframe(btcusd_data)
+# st.dataframe(btcusd_data)
+
+
+# # # start - get data from fred api and store csv # # #
+# # GET S&P DATA
+# Billions of Dollars 
+data_SP500 = fred.get_series('SP500')
+data_SP500 = data_SP500 * 1000
+
+data_SP500.dropna()
+data_SP500 = data_SP500.sort_index()
+# store current df with up-to-date values
+data_SP500.to_csv('coindata/data_SP500.csv', index=True)
+
+# # Assets: Total Assets: Total Assets: Wednesday Level (RESPPANWW)
+#Assets: Total Assets: Total Assets: Wednesday Level (RESPPANWW) Millions of Dollars
+data_WALCL = fred.get_series('WALCL')
+data_WALCL.dropna()
+data_WALCL = data_WALCL.sort_index()
+# store current df with up-to-date values
+data_WALCL.to_csv('coindata/data_WALCL.csv', index=True)
+
+# # Overnight Reverse Repurchase Agreements Treasury Securities Sold by the Federal Reserve in the Temporary Open Market Operations (RRPONTSYD)
+data_RRPONTSYD = fred.get_series('RRPONTSYD')
+#Assets: Total Assets: Total Assets: Wednesday Level (RESPPANWW)
+# Billions of U.S. Dollars
+# data_FRED_RRPONTSYD.values = data_FRED_RRPONTSYD.values * 1000 
+data_RRPONTSYD = data_RRPONTSYD * 1000 
+data_RRPONTSYD.dropna()
+data_RRPONTSYD = data_RRPONTSYD.sort_index()
+# store current df with up-to-date values
+data_RRPONTSYD.to_csv('coindata/data_RRPONTSYD.csv', index=True)
+
+# # Deposits with Federal Reserve Banks, other than Reserve Balances: U.S. Treasury, General Account (WTREGEN)
+# Billions of Dollars 
+data_FRED_WTREGEN = fred.get_series('WTREGEN')
+data_FRED_WTREGEN = data_FRED_WTREGEN * 1000
+
+data_FRED_WTREGEN.dropna()
+data_FRED_WTREGEN = data_FRED_WTREGEN.sort_index()
+# store current df with up-to-date values
+data_FRED_WTREGEN.to_csv('coindata/data_FRED_WTREGEN.csv', index=True)
+
+# # net liquidity vs s&p500 weekly - Diagram
+datasource_fred_total_assets = "data_WALCL.csv"
+fred_total_assets = pd.read_csv("coindata/{}".format(
+    datasource_fred_total_assets.replace("/", " ")), index_col=0)
+fred_total_assets.index = pd.to_datetime(fred_total_assets.index)
+
+most_recent_stored_fred_rrpontsyd_date = fred_total_assets.sort_index().tail(
+    1).index[0].strftime("%Y-%m-%d")
+todays_date = datetime.date.today() - timedelta(days=1)
+todays_date = todays_date.strftime("%Y-%m-%d")
+
+datasource_FRED_WTREGEN = "data_FRED_WTREGEN.csv"
+FRED_WTREGEN_data = pd.read_csv("coindata/{}".format(
+    datasource_FRED_WTREGEN.replace("/", " ")), index_col=0)
+FRED_WTREGEN_data.index = pd.to_datetime(FRED_WTREGEN_data.index)
+
+most_recent_stored_FRED_WTREGEN_date = FRED_WTREGEN_data.sort_index().tail(
+    1).index[0].strftime("%Y-%m-%d")
+
+datasource_FRED_RRPONTSYD = "data_RRPONTSYD.csv"
+FRED_RRPONTSYD_data = pd.read_csv("coindata/{}".format(
+    datasource_FRED_RRPONTSYD.replace("/", " ")), index_col=0)
+FRED_RRPONTSYD_data.index = pd.to_datetime(FRED_RRPONTSYD_data.index)
+
+most_recent_stored_FRED_RRPONTSYD_date = FRED_RRPONTSYD_data.sort_index().tail(
+    1).index[0].strftime("%Y-%m-%d")
+
+# # # end - get data from fred api and store csv # # #
+btcusd_data = btcusd_data * 50
+# # # start - filter data sources! # # #
+FRED_RRPONTSYD_data = FRED_RRPONTSYD_data[(FRED_RRPONTSYD_data.index > '2020-08-11 00:00:00')]
+fred_total_assets = fred_total_assets[(fred_total_assets.index > '2020-08-11 00:00:00')]
+FRED_WTREGEN_data = FRED_WTREGEN_data[(FRED_WTREGEN_data.index > '2020-08-11 00:00:00')]
+data_SP500 = data_SP500[(data_SP500.index > '2020-08-11 00:00:00')]
+btcusd_data = btcusd_data[(btcusd_data.index > '2020-08-11 00:00:00')]
+
+# # filter for datetime to allign all fred data sources!
+merged_FRED_RRPONTSYD_data = pd.merge(FRED_WTREGEN_data,FRED_RRPONTSYD_data, how='left', left_index=True, right_index=True)
+# merged.isnull().sum()
+del merged_FRED_RRPONTSYD_data["0_x"]
+merged_FRED_RRPONTSYD_data.columns=["0"]
+
+netLiquidity = fred_total_assets-merged_FRED_RRPONTSYD_data-FRED_WTREGEN_data
+
+# shift sp two weeks back cause net liquidity fed predicts sp in two weeks!
+data_SP500_2weeksback = data_SP500.shift(-2,"W")
+# # # end - filter data sources! # # #
+
+
+from plotly.subplots import make_subplots
+
+
+# # # start - plot fed net liquidity! # # #
+
+fig_net_liq = make_subplots(specs=[[{"secondary_y": True}]])
+fig_net_liq.add_trace(
+    go.Scatter(
+        x=btcusd_data.index,
+        y=btcusd_data['Last'],
+        name="BTC",
+        mode='lines',
+        marker=dict(
+            # size=16,
+            color="red",  # set color equal to a variable
+            # colorscale='Viridis', # one of plotly colorscales
+            # showscale=True
+        ), 
+    ), 
+    secondary_y=True,
+)
+
+fig_net_liq.add_trace(
+    go.Scatter(
+        x=data_SP500_2weeksback.index,
+        y=data_SP500_2weeksback.values,
+        name="SP500 - 2 weeks ago",
+        mode='lines',
+        marker=dict(
+            # size=16,
+            color="blue",  # set color equal to a variable
+            # colorscale='Viridis', # one of plotly colorscales
+            # showscale=True
+        ), 
+    ), 
+    secondary_y=True,
+)
+
+fig_net_liq.add_trace(go.Scatter(x=fred_total_assets.index, y=fred_total_assets["0"],
+                    mode='lines',
+                    name='fred_total_assets',
+                    marker=dict(
+                        color="black"
+                        ),
+                    )
+                )
+
+fig_net_liq.update_layout(yaxis=dict(domain=[0, 0.7]) )
+
+fig_net_liq.add_trace(go.Scatter(x=netLiquidity.index, y=netLiquidity["0"], stackgroup='one', #fill='tonexty',
+                    mode='lines',
+                    name='netLiquidity',
+                    marker=dict(
+                        color="green"
+                        )
+                    )
+                )
+
+fig_net_liq.add_trace(go.Scatter(x=merged_FRED_RRPONTSYD_data.index, y=merged_FRED_RRPONTSYD_data["0"], stackgroup='one', #fill='tonexty',
+                    mode='lines',
+                    name='merged_FRED_RRPONTSYD_data',
+                    marker=dict(
+                        color="yellow"
+                        )
+                    )
+                )
+
+fig_net_liq.add_trace(go.Scatter(x=FRED_WTREGEN_data.index, y=FRED_WTREGEN_data["0"], stackgroup='one', #fill='tonexty',
+                    mode='lines',
+                    name='FRED_WTREGEN_data',
+                    marker=dict(
+                        color="red"
+                        ),
+                    )
+                )
+                
+fig_net_liq.update_layout(
+    title="Fed net liquidity",
+    autosize=False,
+    width=int(1400/1),
+    height=int(800/1),
+)
+fig_net_liq.update_yaxes(title_text="BTC & SP500", secondary_y=True)
+st.plotly_chart(fig_net_liq)
+
+# # # end - plot fed net liquidity! # # #
+
+# %%
