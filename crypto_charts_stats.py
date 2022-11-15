@@ -17,11 +17,10 @@ st.set_page_config(layout="wide")
 # %%
 from fredapi import Fred
 
+api_key_fred = os.environ['api_key_fred']
 fred = Fred(api_key=api_key_fred)
 
-
 quandl_api_key = os.environ['quandl_api_key']
-
 
 def _max_width_():
     max_width_str = f"max-width: 1300px;"
