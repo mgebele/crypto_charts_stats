@@ -315,7 +315,6 @@ netLiquidity = fred_total_assets-merged_FRED_RRPONTSYD_data-FRED_WTREGEN_data
 
 # %%
 data_SP500_1weekback = data_SP500.shift(-1, "W")
-data_SP500_1weekback
 
 # %%
 import pandas as pd
@@ -325,18 +324,15 @@ pd.options.display.float_format = '{:.2f}'.format
 netLiquidity = netLiquidity[(netLiquidity.index > '2012-11-18 00:00:00')]
 netLiquidity = netLiquidity.squeeze()
 netLiquidity = netLiquidity.dropna()
-netLiquidity
 
 # %%
 data_SP500_1weekback = data_SP500_1weekback[(data_SP500_1weekback.index > '2013-08-12 00:00:00')]
 # data_SP500_1weekback = data_SP500_1weekback.index.drop_duplicates()
 data_SP500_1weekback = data_SP500_1weekback[~data_SP500_1weekback.index.duplicated(keep='first')]
 data_SP500_1weekback = data_SP500_1weekback.dropna()
-data_SP500_1weekback
 
 # %%
 data_SP500_2weeksback = data_SP500_1weekback.shift(-1, "W")
-data_SP500_2weeksback
 
 # %%
 dfdiffsp500_netliq = pd.concat([netLiquidity, data_SP500_1weekback], axis=1, keys=('netLiquidity','data_SP500_1weekback'), join='outer').ffill(axis = 0).dropna()
