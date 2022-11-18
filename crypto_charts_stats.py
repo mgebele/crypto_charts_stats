@@ -310,9 +310,39 @@ merged_FRED_RRPONTSYD_data.columns=["0"]
 netLiquidity = fred_total_assets-merged_FRED_RRPONTSYD_data-FRED_WTREGEN_data
 
 # shift sp two weeks back cause net liquidity fed predicts sp in two weeks!
-data_SP500_2weeksback = data_SP500.shift(-2,"W")
-# # # end - filter data sources! # # #
+# data_SP500_2weeksback = data_SP500.shift(-2,"W")
+# data_SP500_2weeksback
 
+# %%
+data_SP500_1weekback = data_SP500.shift(-1, "W")
+data_SP500_1weekback
+
+# %%
+import pandas as pd
+pd.options.display.float_format = '{:.2f}'.format
+
+# %%
+netLiquidity = netLiquidity[(netLiquidity.index > '2012-11-18 00:00:00')]
+netLiquidity = netLiquidity.squeeze()
+netLiquidity = netLiquidity.dropna()
+netLiquidity
+
+# %%
+data_SP500_1weekback = data_SP500_1weekback[(data_SP500_1weekback.index > '2013-08-12 00:00:00')]
+# data_SP500_1weekback = data_SP500_1weekback.index.drop_duplicates()
+data_SP500_1weekback = data_SP500_1weekback[~data_SP500_1weekback.index.duplicated(keep='first')]
+data_SP500_1weekback = data_SP500_1weekback.dropna()
+data_SP500_1weekback
+
+# %%
+data_SP500_2weeksback = data_SP500_1weekback.shift(-1, "W")
+data_SP500_2weeksback
+
+# %%
+dfdiffsp500_netliq = pd.concat([netLiquidity, data_SP500_1weekback], axis=1, keys=('netLiquidity','data_SP500_1weekback'), join='outer').ffill(axis = 0).dropna()
+dfdiffsp500_netliq["netLiquidity"]  = dfdiffsp500_netliq["netLiquidity"] / 1.1 - 1625
+
+dfdiffsp500_netliq["diff"] = dfdiffsp500_netliq["data_SP500_1weekback"]  - dfdiffsp500_netliq["netLiquidity"]  
 
 from plotly.subplots import make_subplots
 
@@ -320,6 +350,24 @@ from plotly.subplots import make_subplots
 # # # start - plot fed net liquidity! # # #
 
 fig_net_liq = make_subplots(specs=[[{"secondary_y": True}]])
+
+fig_net_liq.add_trace(
+    go.Scatter(
+        x=dfdiffsp500_netliq.index,
+        y=dfdiffsp500_netliq["diff"],
+        name="diffsp500_netliq",
+        mode='lines',
+        marker=dict(
+            # size=16,
+            color="gold",  # set color equal to a variable
+            # colorscale='Viridis', # one of plotly colorscales
+            # showscale=True
+        ), 
+    ), 
+    secondary_y=True,
+)
+
+
 fig_net_liq.add_trace(
     go.Scatter(
         x=btcusd_data.index,
@@ -352,6 +400,23 @@ fig_net_liq.add_trace(
     secondary_y=True,
 )
 
+
+fig_net_liq.add_trace(
+    go.Scatter(
+        x=data_SP500_1weekback.index,
+        y=data_SP500_1weekback.values,
+        name="SP500 - 1 week ago",
+        mode='lines',
+        marker=dict(
+            # size=16,
+            color="blue",  # set color equal to a variable
+            # colorscale='Viridis', # one of plotly colorscales
+            # showscale=True
+        ), 
+    ), 
+    secondary_y=True,
+)
+
 fig_net_liq.add_trace(go.Scatter(x=fred_total_assets.index, y=fred_total_assets["0"],
                     mode='lines',
                     name='fred_total_assets',
@@ -363,7 +428,7 @@ fig_net_liq.add_trace(go.Scatter(x=fred_total_assets.index, y=fred_total_assets[
 
 fig_net_liq.update_layout(yaxis=dict(domain=[0, 0.7]) )
 
-fig_net_liq.add_trace(go.Scatter(x=netLiquidity.index, y=netLiquidity["0"], stackgroup='one', #fill='tonexty',
+fig_net_liq.add_trace(go.Scatter(x=netLiquidity.index, y=netLiquidity.values, stackgroup='one', #fill='tonexty',
                     mode='lines',
                     name='netLiquidity',
                     marker=dict(
@@ -389,6 +454,25 @@ fig_net_liq.add_trace(go.Scatter(x=FRED_WTREGEN_data.index, y=FRED_WTREGEN_data[
                         ),
                     )
                 )
+
+fig.add_shape(type='line',
+                x0=FRED_WTREGEN_data.index[0],
+                y0=1250000,
+                x1=FRED_WTREGEN_data.index[-1],
+                y1=1250000,
+                line=dict(color='Red',),
+                xref='x',
+                yref='y'
+)
+fig.add_shape(type='line',
+                x0=FRED_WTREGEN_data.index[0],
+                y0=300000,
+                x1=FRED_WTREGEN_data.index[-1],
+                y1=300000,
+                line=dict(color='Red',),
+                xref='x',
+                yref='y'
+)
                 
 fig_net_liq.update_layout(
     title="Fed net liquidity",
