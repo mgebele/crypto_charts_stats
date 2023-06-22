@@ -348,69 +348,38 @@ netLiquidity_scaled = pd.Series(netLiquidity_scaled.flatten(), index=netLiquidit
 
 fig_net_liq = make_subplots(specs=[[{"secondary_y": True}]])
 
-# fig_net_liq.add_trace(
-#     go.Scatter(
-#         x=dfdiffsp500_netliq.index,
-#         y=dfdiffsp500_netliq["diff"],
-#         name="diffsp500_netliq",
-#         mode='lines',
-#         yaxis='y3',
-#         marker=dict(color="gold"), 
-#     )
-# )
-
 fig_net_liq.add_trace(
     go.Scatter(
         x=btcusd_data_scaled.index,
-        y=btcusd_data_scaled+0.1,
+        y=btcusd_data_scaled + 0.4,
         name="BTC (Scaled)",
         mode='lines',
         marker=dict(color="red"), 
-    ), 
+    )
 )
 
+ # adjust this value as needed
 fig_net_liq.add_trace(
     go.Scatter(
         x=data_SP500.index,
-        y=data_SP500.values,
-        name="SP500",
+        y=data_SP500.values,  # shift data downwards
+        name="SP500 (shifted downwards)",
         mode='lines',
         yaxis='y5',
         marker=dict(color="blue"), 
     )
 )
 
-
-fig_net_liq.update_layout(yaxis=dict(domain=[0, 0.7]) )
-
-fig_net_liq.add_trace(go.Scatter(x=netLiquidity_scaled.index, y=netLiquidity_scaled, stackgroup='one',
-                    mode='lines',
-                    name='netLiquidity (Scaled)',
-                    marker=dict(color="green"),
-                    ),
+fig_net_liq.add_trace(
+    go.Scatter(
+        x=netLiquidity_scaled.index, 
+        y=netLiquidity_scaled.values + 0.4,
+        stackgroup='one',
+        mode='lines',
+        name='netLiquidity (Scaled)',
+        marker=dict(color="green"),
+        )
 )
-
-
-# fig_net_liq.add_trace(go.Scatter(x=fred_total_assets.index, y=fred_total_assets["0"],
-#                     mode='lines',
-#                     name='fred_total_assets',
-#                     marker=dict(color="black"),
-#                     )
-#                 )
-
-# fig_net_liq.add_trace(go.Scatter(x=merged_FRED_RRPONTSYD_data.index, y=merged_FRED_RRPONTSYD_data["0"], stackgroup='one',
-#                     mode='lines',
-#                     name='merged_FRED_RRPONTSYD_data',
-#                     marker=dict(color="yellow"),
-#                     )
-#                 )
-
-# fig_net_liq.add_trace(go.Scatter(x=FRED_WTREGEN_data.index, y=FRED_WTREGEN_data["0"], stackgroup='one',
-#                     mode='lines',
-#                     name='FRED_WTREGEN_data',
-#                     marker=dict(color="red"),
-#                     )
-#                 )
 
 fig_net_liq.update_layout(
     title="Fed net liquidity predicts SP500 for following week!",
@@ -419,11 +388,10 @@ fig_net_liq.update_layout(
     height=int(800/1),
     yaxis3=dict(anchor="x", overlaying="y", side="left"),
     yaxis4=dict(anchor="x", overlaying="y", side="right"),
-    yaxis5=dict(anchor="x", overlaying="y", side="right", position=0.05) # We move this to the left by adjusting the position
+    yaxis5=dict(anchor="x", overlaying="y", side="right")  # adjust the position downwards # We move this to the left by adjusting the position
 )
 
 fig_net_liq.update_yaxes(title_text="BTC & SP500", secondary_y=True)
 
 st.plotly_chart(fig_net_liq)
-
 # # # end - plot fed net liquidity! # # #
