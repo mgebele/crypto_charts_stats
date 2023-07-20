@@ -82,7 +82,6 @@ btcusd_data["111_movingaverage"] = pd.Series.rolling(
 
 st.title("Crypto Charts")
 
-
 # diagram - Pi Cycle Top Indicator BTC/USD
 fig = go.Figure(
     data=go.Scatter(
@@ -121,7 +120,7 @@ fig.add_trace(
         ),
     )
 )
-fig.update_yaxes(type="log") 
+fig.update_yaxes(type="log")
 fig.update_layout(
     # title="Plot Title",
     autosize=False,
@@ -229,7 +228,7 @@ fig.update_layout(
 st.plotly_chart(fig)
 
 # Get Data and Process it
-data_SP500 = fred.get_series("SP500") # Billions of Dollars
+data_SP500 = fred.get_series("SP500")  # Billions of Dollars
 data_SP500 = data_SP500.sort_index()
 # store current df with up-to-date values
 data_SP500.to_csv("coindata/data_SP500.csv", index=True)
@@ -318,7 +317,6 @@ merged_FRED_RRPONTSYD_data.columns = ["0"]
 netLiquidity = fred_total_assets - merged_FRED_RRPONTSYD_data - FRED_WTREGEN_data
 
 # shift sp two weeks back cause net liquidity fed predicts sp in two weeks!
-# data_SP500_2weeksback = data_SP500.shift(-2,"W")
 netLiquidity = netLiquidity[(netLiquidity.index > "2012-11-18 00:00:00")]
 netLiquidity = netLiquidity.squeeze()
 netLiquidity = netLiquidity.dropna()
@@ -327,12 +325,10 @@ data_SP500_1weekback = data_SP500.shift(-7, "D")
 data_SP500_1weekback = data_SP500_1weekback[
     (data_SP500_1weekback.index > "2013-08-12 00:00:00")
 ]
-# data_SP500_1weekback = data_SP500_1weekback.index.drop_duplicates()
 data_SP500_1weekback = data_SP500_1weekback[
     ~data_SP500_1weekback.index.duplicated(keep="first")
 ]
 data_SP500_1weekback = data_SP500_1weekback.dropna()
-
 
 dfdiffsp500_netliq = (
     pd.concat(
@@ -344,7 +340,6 @@ dfdiffsp500_netliq = (
     .ffill(axis=0)
     .dropna()
 )
-# dfdiffsp500_netliq["netLiquidity"]  = dfdiffsp500_netliq["netLiquidity"] / 1.1 - 1625
 dfdiffsp500_netliq["diff"] = (
     dfdiffsp500_netliq["data_SP500_1weekback"] - dfdiffsp500_netliq["netLiquidity"]
 )
@@ -407,4 +402,3 @@ fig_net_liq.update_layout(
 fig_net_liq.update_yaxes(title_text="BTC & SP500", secondary_y=True)
 st.plotly_chart(fig_net_liq)
 # # # end - plot fed net liquidity! # # #
-
