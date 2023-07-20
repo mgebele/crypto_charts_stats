@@ -82,6 +82,8 @@ btcusd_data["111_movingaverage"] = pd.Series.rolling(
 
 st.title("Crypto Charts")
 
+
+# diagram - Pi Cycle Top Indicator BTC/USD
 fig = go.Figure(
     data=go.Scatter(
         x=btcusd_data.index,
@@ -95,7 +97,6 @@ fig = go.Figure(
         ),
     )
 )
-
 fig.add_trace(
     go.Scatter(
         x=btcusd_data.index,
@@ -108,7 +109,6 @@ fig.add_trace(
         ),
     )
 )
-
 fig.add_trace(
     go.Scatter(
         x=btcusd_data.index,
@@ -121,10 +121,7 @@ fig.add_trace(
         ),
     )
 )
-
-# btcusd_data["111_movingaverage"]
-fig.update_yaxes(type="log")  # , range=[0,5]
-
+fig.update_yaxes(type="log") 
 fig.update_layout(
     # title="Plot Title",
     autosize=False,
@@ -132,42 +129,31 @@ fig.update_layout(
     height=int(800 / 1.1),
     title="Pi Cycle Top Indicator BTC/USD",
 )
-
 st.plotly_chart(fig)
-# # # end - chart with tweets # # #
 
+# TODO: Future integrate ETH?
 
-# run_it = st.sidebar.button('Show visualizations')
-
-# TODO: Future integrate ETH
-# display_name_all_twitter_user_scraped_csvs, all_twitter_user_scraped_csvs = get_all_stored_crypto_csvs()
-# display_name_user_selection_list_containing_twitter_user = st.sidebar.selectbox(
-#     "Select existing Twitter-User", list(display_name_all_twitter_user_scraped_csvs), 0)
-
-
+# Get FED data from quandl and store it
 fed_assets_quandl_key = "FED/RESPPA_N_WW"
-
 fed_assets_data = pd.read_csv(
     "coindata/{}".format(fed_assets_quandl_key.replace("/", " ")), index_col=0
 )
 fed_assets_data.index = pd.to_datetime(fed_assets_data.index)
-
 most_recent_stored_fed_assets_date = fed_assets_data.sort_index().tail(1).index[0]
-
-# every wednesday we get the data from the fed
 todays_date = datetime.date.today() - datetime.timedelta(days=6)
 todays_date = todays_date
 
+# every wednesday we get the data from the fed
 if most_recent_stored_fed_assets_date < todays_date:
     fed_assets_data = q.get(fed_assets_quandl_key, api_key=quandl_api_key)
     fed_assets_data = fed_assets_data.dropna()
     fed_assets_data = fed_assets_data.sort_index()
+    # store current df with up-to-date values
     fed_assets_data.to_csv(
         "coindata/{}".format(fed_assets_quandl_key.replace("/", " ")), index=True
     )
-# store current df with up-to-date values
 
-# merge fed and btc
+# merge fed and btc data and create new features
 btcusd_data_and_fed = pd.merge(
     btcusd_data, fed_assets_data, left_index=True, right_index=True, how="left"
 )
@@ -182,6 +168,8 @@ btcusd_data_and_fed["350_movingaverage_per_FedAssets"] = pd.Series.rolling(
 btcusd_data_and_fed["111_movingaverage_per_FedAssets"] = pd.Series.rolling(
     btcusd_data_and_fed["BTC_per_FedAssets"], window=111, min_periods=1
 ).mean()
+
+# diagram - Pi Cycle Top Indicator BTC/FED Total Assets
 fig = go.Figure(
     data=go.Scatter(
         x=btcusd_data_and_fed.index,
@@ -193,7 +181,6 @@ fig = go.Figure(
         ),
     )
 )
-
 fig.add_trace(
     go.Scatter(
         x=btcusd_data_and_fed.index,
@@ -206,7 +193,6 @@ fig.add_trace(
         ),
     )
 )
-
 fig.add_trace(
     go.Scatter(
         x=btcusd_data_and_fed.index,
@@ -219,7 +205,6 @@ fig.add_trace(
         ),
     )
 )
-
 fig.add_trace(
     go.Scatter(
         x=btcusd_data.index,
@@ -232,10 +217,7 @@ fig.add_trace(
         ),
     )
 )
-
-# btcusd_data["111_movingaverage"]
 fig.update_yaxes(type="log")  # , range=[0,5]
-
 fig.update_layout(
     # title="Plot Title",
     autosize=False,
@@ -244,19 +226,14 @@ fig.update_layout(
     # TODO check ezb data summed up with fed
     title="Pi Cycle Top Indicator BTC/FED Total Assets",
 )
-
 st.plotly_chart(fig)
 
-
-# # # start - get data from fred api and store csv # # #
-# # GET S&P DATA
-# Billions of Dollars
-data_SP500 = fred.get_series("SP500")
+# Get Data and Process it
+data_SP500 = fred.get_series("SP500") # Billions of Dollars
 data_SP500 = data_SP500.sort_index()
 # store current df with up-to-date values
 data_SP500.to_csv("coindata/data_SP500.csv", index=True)
 
-# # Assets: Total Assets: Total Assets: Wednesday Level (RESPPANWW)
 # Assets: Total Assets: Total Assets: Wednesday Level (RESPPANWW) Millions of Dollars
 data_WALCL = fred.get_series("WALCL")
 data_WALCL.dropna()
@@ -285,7 +262,7 @@ data_FRED_WTREGEN = data_FRED_WTREGEN.sort_index()
 # store current df with up-to-date values
 data_FRED_WTREGEN.to_csv("coindata/data_FRED_WTREGEN.csv", index=True)
 
-# # net liquidity vs s&p500 weekly - Diagram
+# get fred_total_assets
 datasource_fred_total_assets = "data_WALCL.csv"
 fred_total_assets = pd.read_csv(
     "coindata/{}".format(datasource_fred_total_assets.replace("/", " ")), index_col=0
@@ -318,11 +295,7 @@ most_recent_stored_FRED_RRPONTSYD_date = (
     FRED_RRPONTSYD_data.sort_index().tail(1).index[0].strftime("%Y-%m-%d")
 )
 
-# # # end - get data from fred api and store csv # # #
-
-
-# # # start - filter data sources! # # #
-
+# filter data sources
 FRED_RRPONTSYD_data = FRED_RRPONTSYD_data[
     (FRED_RRPONTSYD_data.index > "2020-08-11 00:00:00")
 ]
@@ -331,7 +304,7 @@ FRED_WTREGEN_data = FRED_WTREGEN_data[(FRED_WTREGEN_data.index > "2020-08-11 00:
 data_SP500 = data_SP500[(data_SP500.index > "2020-08-11 00:00:00")]
 btcusd_data = btcusd_data[(btcusd_data.index > "2020-08-11 00:00:00")]
 
-# # filter for datetime to allign all fred data sources!
+# filter for datetime to allign all fred data sources!
 merged_FRED_RRPONTSYD_data = pd.merge(
     FRED_WTREGEN_data,
     FRED_RRPONTSYD_data,
@@ -339,7 +312,6 @@ merged_FRED_RRPONTSYD_data = pd.merge(
     left_index=True,
     right_index=True,
 )
-# merged.isnull().sum()
 del merged_FRED_RRPONTSYD_data["0_x"]
 merged_FRED_RRPONTSYD_data.columns = ["0"]
 
@@ -347,8 +319,6 @@ netLiquidity = fred_total_assets - merged_FRED_RRPONTSYD_data - FRED_WTREGEN_dat
 
 # shift sp two weeks back cause net liquidity fed predicts sp in two weeks!
 # data_SP500_2weeksback = data_SP500.shift(-2,"W")
-# data_SP500_2weeksback
-
 netLiquidity = netLiquidity[(netLiquidity.index > "2012-11-18 00:00:00")]
 netLiquidity = netLiquidity.squeeze()
 netLiquidity = netLiquidity.dropna()
@@ -379,27 +349,20 @@ dfdiffsp500_netliq["diff"] = (
     dfdiffsp500_netliq["data_SP500_1weekback"] - dfdiffsp500_netliq["netLiquidity"]
 )
 
-# # # end - filter data sources! # # #
-
-
+# Scale features to be between 0 and 1 to plot it together in one chart
 # Create a scaler object
 scaler = MinMaxScaler()
-
 # Fit the scaler to the btcusd_data and transform it
 btcusd_data_scaled = scaler.fit_transform(btcusd_data["Last"].values.reshape(-1, 1))
-
 # Now, fit the scaler to the netLiquidity data and transform it
 netLiquidity_scaled = scaler.fit_transform(netLiquidity.values.reshape(-1, 1))
-
 # Convert these arrays back into pandas Series, keeping the original indices
 btcusd_data_scaled = pd.Series(btcusd_data_scaled.flatten(), index=btcusd_data.index)
 netLiquidity_scaled = pd.Series(netLiquidity_scaled.flatten(), index=netLiquidity.index)
 
 
 # # # start - plot fed net liquidity! # # #
-
 fig_net_liq = make_subplots(specs=[[{"secondary_y": True}]])
-
 fig_net_liq.add_trace(
     go.Scatter(
         x=btcusd_data_scaled.index,
@@ -409,7 +372,6 @@ fig_net_liq.add_trace(
         marker=dict(color="red"),
     )
 )
-
 # adjust this value as needed
 fig_net_liq.add_trace(
     go.Scatter(
@@ -421,7 +383,6 @@ fig_net_liq.add_trace(
         marker=dict(color="blue"),
     )
 )
-
 fig_net_liq.add_trace(
     go.Scatter(
         x=netLiquidity_scaled.index,
@@ -432,7 +393,6 @@ fig_net_liq.add_trace(
         marker=dict(color="green"),
     )
 )
-
 fig_net_liq.update_layout(
     title="Fed net liquidity predicts SP500 for following week!",
     autosize=False,
@@ -444,8 +404,7 @@ fig_net_liq.update_layout(
         anchor="x", overlaying="y", side="right"
     ),  # adjust the position downwards # We move this to the left by adjusting the position
 )
-
 fig_net_liq.update_yaxes(title_text="BTC & SP500", secondary_y=True)
-
 st.plotly_chart(fig_net_liq)
 # # # end - plot fed net liquidity! # # #
+
