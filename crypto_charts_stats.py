@@ -492,6 +492,10 @@ fig_net_liq.update_yaxes(title_text="BTC & SP500", secondary_y=True)
 st.plotly_chart(fig_net_liq)
 # # # end - plot fed net liquidity! # # #
 
+# add function to select between different cryptos. and then two charts below change!
+# also add function for email notification? Full moon new moon maybe?
+
+# also add diagram for support resistance!
 
 # # # start - plot volume bubble # # #
 bubble_size = st.slider("Bubble Size", min_value=0, max_value=100, value=30)
