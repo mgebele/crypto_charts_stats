@@ -10,8 +10,16 @@ import pandas as pd
 import plotly.graph_objects as go
 import quandl as q
 import streamlit as st
+import requests
+import pandas as pd
+import json
+import time
+import warnings
+from astral import moon
 
 st.set_page_config(layout="wide")
+import requests
+import json
 from dateutil import tz
 from plotly.subplots import make_subplots
 from sklearn.preprocessing import MinMaxScaler
@@ -39,7 +47,88 @@ def _max_width_():
 
 _max_width_()
 
-# # # start - read in BTC data # # #
+
+# # # start - read in BINANCE BTC data # # # binance only goes back to 2017!
+# def get_binance_btcusd():
+#     URL = "https://api.binance.com/api/v3/klines"
+#     start_str = "2014-01-01 00:00:00"
+#     fmt = "%Y-%m-%d %H:%M:%S"
+#     start_time = int(time.mktime(time.strptime(start_str, fmt)) * 1000)
+#     last_open_time = 0  # added this line
+
+#     df = pd.DataFrame()
+
+#     while True:
+#         parameters = {
+#             "symbol": "BTCUSDT",
+#             "interval": "1d",
+#             "startTime": start_time,
+#             "limit": 1000,  # maximum limit
+#         }
+
+#         response = requests.get(URL, params=parameters)
+#         data = json.loads(response.text)
+
+#         if len(data) == 0 or last_open_time == start_time:  # updated this line
+#             break
+
+#         temp_df = pd.DataFrame(
+#             data,
+#             columns=[
+#                 "Open_time",
+#                 "Open",
+#                 "High",
+#                 "Low",
+#                 "Close",
+#                 "Volume",
+#                 "Close_time",
+#                 "Quote_asset_volume",
+#                 "Number_of_trades",
+#                 "Taker_buy_base",
+#                 "Taker_buy_quote",
+#                 "Ignore",
+#             ],
+#         )
+#         temp_df["Open_time"] = pd.to_datetime(temp_df["Open_time"], unit="ms")
+#         temp_df["Date"] = temp_df["Open_time"].dt.date
+#         temp_df["High"] = temp_df["High"].astype(float)
+#         temp_df["Low"] = temp_df["Low"].astype(float)
+#         temp_df["Last"] = temp_df["Close"].astype(float)
+#         temp_df["Volume"] = temp_df["Volume"].astype(float)
+#         temp_df["Mid"] = (temp_df["High"] + temp_df["Low"]) / 2
+#         temp_df["First"] = temp_df["Last"].shift()
+
+#         df = pd.concat([df, temp_df])
+#         last_open_time = start_time  # added this line
+#         start_time = (
+#             int(temp_df["Open_time"].dt.to_pydatetime()[-1].timestamp() * 1000) + 1
+#         )
+
+#     df = df[["Date", "High", "Low", "Mid", "Last", "Volume", "First"]]
+#     df.to_csv("coindata/binance_btcusdt.csv", index=False)
+
+
+# datasource_btcusd = "binance_btcusdt.csv"
+# btcusd_data = pd.read_csv("coindata/{}".format(datasource_btcusd), index_col=0)
+# btcusd_data.index = pd.to_datetime(btcusd_data.index)
+
+# most_recent_stored_btcusd_date = (
+#     btcusd_data.sort_index().tail(1).index[0].strftime("%Y-%m-%d")
+# )
+
+# todays_date = datetime.date.today()
+# todays_date = todays_date.strftime("%Y-%m-%d")
+
+# if most_recent_stored_btcusd_date != todays_date:
+#     get_binance_btcusd()
+
+#     btcusd_data = pd.read_csv("coindata/{}".format(datasource_btcusd), index_col=0)
+#     btcusd_data.index = pd.to_datetime(btcusd_data.index)
+
+# # # # end - read in BINANCE BTC data # # #
+
+
+# # # start - read in BITFINEX BTC data # # #
 datasource_btcusd = "BITFINEX/BTCUSD.csv"
 btcusd_data = pd.read_csv(
     "coindata/{}".format(datasource_btcusd.replace("/", " ")), index_col=0
@@ -405,7 +494,6 @@ st.plotly_chart(fig_net_liq)
 
 
 # # # start - plot volume bubble # # #
-
 bubble_size = st.slider("Bubble Size", min_value=0, max_value=100, value=30)
 
 # Normalizing the 'Volume'
@@ -458,4 +546,110 @@ fig_vol_bubble.update_layout(
     height=int(800 / 1),
 )
 st.plotly_chart(fig_vol_bubble)
+# # # end - plot volume bubble # # #
+
+
+# # # start - newmoon fullmoon chart # # #
+
+# take the btcusd_data index and iterate over it to get the moon phase for each day
+# the make a new df out of it called df_moon_phase
+df_moon_phase = pd.DataFrame()
+for i in btcusd_data.index:
+    df_moon_phase = df_moon_phase.append(
+        {"date": i, "moon_phase": moon.phase(i)}, ignore_index=True
+    )
+
+df_moon_phase["moon_phase"] = df_moon_phase["moon_phase"].fillna(0).astype(int)
+df_moon_phase["date"] = pd.to_datetime(df_moon_phase["date"])
+df_moon_phase["date"] = df_moon_phase["date"].dt.date
+df_moon_phase = df_moon_phase.set_index("date")
+
+# check the relationship between moon phase and btcusd_data
+# merge sp500 with moon phase
+btcusd_data_and_moon_phase = pd.merge(
+    btcusd_data, df_moon_phase, left_index=True, right_index=True, how="left"
+)
+btcusd_data_and_moon_phase = btcusd_data_and_moon_phase.dropna()
+
+# 0 .. 6.99	New moon
+# 7 .. 13.99	First quarter
+# 14 .. 20.99	Full moon
+# 21 .. 27.99	Last quarter
+# create a new column called moon_phase_category and fill it with the moon_phase_category
+btcusd_data_and_moon_phase["moon_phase_category"] = ""
+btcusd_data_and_moon_phase.loc[
+    (btcusd_data_and_moon_phase["moon_phase"] >= 0)
+    & (btcusd_data_and_moon_phase["moon_phase"] <= 6.99),
+    "moon_phase_category",
+] = 0
+btcusd_data_and_moon_phase.loc[
+    (btcusd_data_and_moon_phase["moon_phase"] >= 7)
+    & (btcusd_data_and_moon_phase["moon_phase"] <= 13.99),
+    "moon_phase_category",
+] = 7
+btcusd_data_and_moon_phase.loc[
+    (btcusd_data_and_moon_phase["moon_phase"] >= 14)
+    & (btcusd_data_and_moon_phase["moon_phase"] <= 20.99),
+    "moon_phase_category",
+] = 14
+btcusd_data_and_moon_phase.loc[
+    (btcusd_data_and_moon_phase["moon_phase"] >= 21)
+    & (btcusd_data_and_moon_phase["moon_phase"] <= 27.99),
+    "moon_phase_category",
+] = 21
+
+
+# make a new plot and plot the daily_price_change of btc by time on the x-axis
+fig_btc_moon = make_subplots(specs=[[{"secondary_y": True}]])
+fig_btc_moon.add_trace(
+    go.Scatter(
+        x=btcusd_data_and_moon_phase.index,
+        y=btcusd_data_and_moon_phase["Last"],
+        name="Last",
+        mode="lines",
+        marker=dict(color="red"),
+    )
+)
+
+# Add markers
+for i in range(len(btcusd_data_and_moon_phase)):
+    if btcusd_data_and_moon_phase["moon_phase"].iloc[i] < 1:
+        fig_btc_moon.add_annotation(
+            x=btcusd_data_and_moon_phase.index[i],
+            y=0.9,
+            text="🌑",
+            showarrow=False,
+            font=dict(
+                size=16,
+            ),
+            xref="x",
+            yref="paper",  # Position annotation relative to the entire plot
+            yanchor="bottom",  # Anchor the bottom of the text at y
+        )
+    elif btcusd_data_and_moon_phase["moon_phase"].iloc[i] == 14:
+        fig_btc_moon.add_annotation(
+            x=btcusd_data_and_moon_phase.index[i],
+            y=0,
+            text="🌕",
+            showarrow=False,
+            font=dict(
+                size=16,
+            ),
+            xref="x",
+            yref="paper",  # Position annotation relative to the entire plot
+            yanchor="bottom",  # Anchor the bottom of the text at y
+        )
+
+
+fig_btc_moon.update_layout(
+    xaxis_title="Date",
+    yaxis_title="Last",
+    yaxis2_title="Volume",
+    xaxis_rangeslider_visible=True,
+    title="BTC moon Chart",
+    autosize=False,
+    width=int(1400 / 1),
+    height=int(800 / 1),
+)
+st.plotly_chart(fig_btc_moon)
 # # # end - plot volume bubble # # #
