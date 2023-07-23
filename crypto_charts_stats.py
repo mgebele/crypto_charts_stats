@@ -402,3 +402,60 @@ fig_net_liq.update_layout(
 fig_net_liq.update_yaxes(title_text="BTC & SP500", secondary_y=True)
 st.plotly_chart(fig_net_liq)
 # # # end - plot fed net liquidity! # # #
+
+
+# # # start - plot volume bubble # # #
+
+bubble_size = st.slider("Bubble Size", min_value=0, max_value=100, value=30)
+
+# Normalizing the 'Volume'
+btcusd_data["norm_volume"] = (btcusd_data["Volume"] - btcusd_data["Volume"].min()) / (
+    btcusd_data["Volume"].max() - btcusd_data["Volume"].min()
+)
+# Calculate daily price change
+btcusd_data["daily_change"] = btcusd_data["Last"].diff()
+# Assign colors based on positive or negative change
+btcusd_data["color"] = np.where(btcusd_data["daily_change"] > 0, "green", "red")
+# Create figure with secondary y-axis
+fig_vol_bubble = make_subplots(specs=[[{"secondary_y": True}]])
+# Add traces
+fig_vol_bubble.add_trace(
+    go.Bar(
+        x=btcusd_data.index,
+        y=btcusd_data["Volume"],
+        name="Volume",
+        marker=dict(
+            color="black",
+            opacity=0.5,
+        ),
+    ),
+    secondary_y=True,
+)
+
+fig_vol_bubble.add_trace(
+    go.Scatter(
+        x=btcusd_data.index,
+        y=btcusd_data["Last"],
+        mode="markers+lines",
+        marker=dict(
+            size=btcusd_data["norm_volume"] * bubble_size,  # Scale marker size
+            color=btcusd_data["color"],  # Assign color based on 'daily_change'
+        ),
+        name="Last",
+        line=dict(color="black"),
+    ),
+    secondary_y=False,
+)
+
+fig_vol_bubble.update_layout(
+    xaxis_title="Date",
+    yaxis_title="Last",
+    yaxis2_title="Volume",
+    xaxis_rangeslider_visible=True,
+    title="BTC Bubble Volume Chart",
+    autosize=False,
+    width=int(1400 / 1),
+    height=int(800 / 1),
+)
+st.plotly_chart(fig_vol_bubble)
+# # # end - plot volume bubble # # #
