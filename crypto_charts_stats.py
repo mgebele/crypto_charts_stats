@@ -545,7 +545,7 @@ fig_vol_bubble.update_layout(
     yaxis_title="Last",
     yaxis2_title="Volume",
     xaxis_rangeslider_visible=True,
-    title=f"BTC Bubble Volume Chart {datasource_btcusd.split("/")[0]} ",
+    title=f"BTC Bubble Volume Chart {datasource_btcusd.split('/')[0]}",
     autosize=False,
     width=int(1400 / 1),
     height=int(800 / 1),
@@ -606,51 +606,67 @@ btcusd_data_and_moon_phase.loc[
 
 # make a new plot and plot the daily_price_change of btc by time on the x-axis
 fig_btc_moon = make_subplots(specs=[[{"secondary_y": True}]])
+# Add the scatter plot for the 'Last' data
 fig_btc_moon.add_trace(
     go.Scatter(
         x=btcusd_data_and_moon_phase.index,
         y=btcusd_data_and_moon_phase["Last"],
-        name="Last",
         mode="lines",
-        marker=dict(color="red"),
+        name="Last",
+        line=dict(color="red"),
     )
 )
+# Create empty lists to hold the x, y, and text values
+x_new_moon = []
+x_full_moon = []
+y_new_moon = []
+y_full_moon = []
+text_new_moon = []
+text_full_moon = []
 
 last_moon_phase = None
 
+# Loop over the dataframe
 for i in range(len(btcusd_data_and_moon_phase)):
     current_moon_phase = btcusd_data_and_moon_phase["moon_phase_category"].iloc[i]
-    if (
-        current_moon_phase != last_moon_phase
-    ):  # check if the moon phase category changed
+    if current_moon_phase != last_moon_phase:
         if current_moon_phase == 0:
-            fig_btc_moon.add_annotation(
-                x=btcusd_data_and_moon_phase.index[i],
-                y=0.9,
-                text="🌑",
-                showarrow=False,
-                font=dict(
-                    size=16,
-                ),
-                xref="x",
-                yref="paper",  # Position annotation relative to the entire plot
-                yanchor="bottom",  # Anchor the bottom of the text at y
-            )
+            # Add the date to the x list, 0.9 to the y list, and the hover text to the text list
+            x_new_moon.append(btcusd_data_and_moon_phase.index[i])
+            y_new_moon.append(btcusd_data_and_moon_phase.Last[i] * 1.2)
+            text_new_moon.append(f"New Moon: {btcusd_data_and_moon_phase.index[i]}")
         elif current_moon_phase == 14:
-            fig_btc_moon.add_annotation(
-                x=btcusd_data_and_moon_phase.index[i],
-                y=0,
-                text="🌕",
-                showarrow=False,
-                font=dict(
-                    size=16,
-                ),
-                xref="x",
-                yref="paper",  # Position annotation relative to the entire plot
-                yanchor="bottom",  # Anchor the bottom of the text at y
-            )
-        last_moon_phase = current_moon_phase  # update the last moon phase
+            # Add the date to the x list, 0 to the y list, and the hover text to the text list
+            x_full_moon.append(btcusd_data_and_moon_phase.index[i])
+            y_full_moon.append(btcusd_data_and_moon_phase.Last[i] * 0.8)
+            text_full_moon.append(f"Full Moon: {btcusd_data_and_moon_phase.index[i]}")
+        last_moon_phase = current_moon_phase
 
+# Add a scatter plot to the figure for the new moon points
+fig_btc_moon.add_trace(
+    go.Scatter(
+        x=x_new_moon,
+        y=y_new_moon,
+        mode="markers",
+        marker=dict(symbol="circle", size=10, color="black"),
+        text=text_new_moon,
+        hoverinfo="text",
+        showlegend=False,
+    )
+)
+
+# Add a scatter plot to the figure for the full moon points
+fig_btc_moon.add_trace(
+    go.Scatter(
+        x=x_full_moon,
+        y=y_full_moon,
+        mode="markers",
+        marker=dict(symbol="circle", size=10, color="yellow"),
+        text=text_full_moon,
+        hoverinfo="text",
+        showlegend=False,
+    )
+)
 
 fig_btc_moon.update_layout(
     xaxis_title="Date",
@@ -662,5 +678,6 @@ fig_btc_moon.update_layout(
     width=int(1400 / 1),
     height=int(800 / 1),
 )
+
 st.plotly_chart(fig_btc_moon)
 # # # end - plot volume bubble # # #
