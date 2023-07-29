@@ -624,7 +624,7 @@ for i in range(len(btcusd_data_and_moon_phase)):
         current_moon_phase != last_moon_phase
     ):  # check if the moon phase category changed
         if current_moon_phase == 0:
-            btcusd_data_and_moon_phase.add_annotation(
+            fig_btc_moon.add_annotation(
                 x=btcusd_data_and_moon_phase.index[i],
                 y=0.9,
                 text="🌑",
@@ -637,7 +637,7 @@ for i in range(len(btcusd_data_and_moon_phase)):
                 yanchor="bottom",  # Anchor the bottom of the text at y
             )
         elif current_moon_phase == 14:
-            btcusd_data_and_moon_phase.add_annotation(
+            fig_btc_moon.add_annotation(
                 x=btcusd_data_and_moon_phase.index[i],
                 y=0,
                 text="🌕",
