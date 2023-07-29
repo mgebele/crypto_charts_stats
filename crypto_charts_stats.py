@@ -545,7 +545,7 @@ fig_vol_bubble.update_layout(
     yaxis_title="Last",
     yaxis2_title="Volume",
     xaxis_rangeslider_visible=True,
-    title="BTC Bubble Volume Chart",
+    title=f"BTC Bubble Volume Chart {datasource_btcusd.split("/")[0]} ",
     autosize=False,
     width=int(1400 / 1),
     height=int(800 / 1),
