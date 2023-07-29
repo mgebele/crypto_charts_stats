@@ -496,6 +496,7 @@ st.plotly_chart(fig_net_liq)
 # also add function for email notification? Full moon new moon maybe?
 
 # also add diagram for support resistance!
+# maybe bring this on own page? where the crypto dependent charts are that can be selected?
 
 # # # start - plot volume bubble # # #
 bubble_size = st.slider("Bubble Size", min_value=0, max_value=100, value=30)
@@ -615,34 +616,40 @@ fig_btc_moon.add_trace(
     )
 )
 
-# Add markers
+last_moon_phase = None
+
 for i in range(len(btcusd_data_and_moon_phase)):
-    if btcusd_data_and_moon_phase["moon_phase"].iloc[i] < 1:
-        fig_btc_moon.add_annotation(
-            x=btcusd_data_and_moon_phase.index[i],
-            y=0.9,
-            text="🌑",
-            showarrow=False,
-            font=dict(
-                size=16,
-            ),
-            xref="x",
-            yref="paper",  # Position annotation relative to the entire plot
-            yanchor="bottom",  # Anchor the bottom of the text at y
-        )
-    elif btcusd_data_and_moon_phase["moon_phase"].iloc[i] == 14:
-        fig_btc_moon.add_annotation(
-            x=btcusd_data_and_moon_phase.index[i],
-            y=0,
-            text="🌕",
-            showarrow=False,
-            font=dict(
-                size=16,
-            ),
-            xref="x",
-            yref="paper",  # Position annotation relative to the entire plot
-            yanchor="bottom",  # Anchor the bottom of the text at y
-        )
+    current_moon_phase = btcusd_data_and_moon_phase["moon_phase_category"].iloc[i]
+    if (
+        current_moon_phase != last_moon_phase
+    ):  # check if the moon phase category changed
+        if current_moon_phase == 0:
+            btcusd_data_and_moon_phase.add_annotation(
+                x=btcusd_data_and_moon_phase.index[i],
+                y=0.9,
+                text="🌑",
+                showarrow=False,
+                font=dict(
+                    size=16,
+                ),
+                xref="x",
+                yref="paper",  # Position annotation relative to the entire plot
+                yanchor="bottom",  # Anchor the bottom of the text at y
+            )
+        elif current_moon_phase == 14:
+            btcusd_data_and_moon_phase.add_annotation(
+                x=btcusd_data_and_moon_phase.index[i],
+                y=0,
+                text="🌕",
+                showarrow=False,
+                font=dict(
+                    size=16,
+                ),
+                xref="x",
+                yref="paper",  # Position annotation relative to the entire plot
+                yanchor="bottom",  # Anchor the bottom of the text at y
+            )
+        last_moon_phase = current_moon_phase  # update the last moon phase
 
 
 fig_btc_moon.update_layout(
