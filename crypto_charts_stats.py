@@ -108,8 +108,8 @@ _max_width_()
 #     df.to_csv("coindata/binance_btcusdt.csv", index=False)
 
 
-# datasource_btcusd = "binance_btcusdt.csv"
-# btcusd_data = pd.read_csv("coindata/{}".format(datasource_btcusd), index_col=0)
+# datasource = "binance_btcusdt.csv"
+# btcusd_data = pd.read_csv("coindata/{}".format(datasource), index_col=0)
 # btcusd_data.index = pd.to_datetime(btcusd_data.index)
 
 # most_recent_stored_btcusd_date = (
@@ -122,29 +122,39 @@ _max_width_()
 # if most_recent_stored_btcusd_date != todays_date:
 #     get_binance_btcusd()
 
-#     btcusd_data = pd.read_csv("coindata/{}".format(datasource_btcusd), index_col=0)
+#     btcusd_data = pd.read_csv("coindata/{}".format(datasource), index_col=0)
 #     btcusd_data.index = pd.to_datetime(btcusd_data.index)
 
 # # # # end - read in BINANCE BTC data # # #
 
 
-# # # start - read in BITFINEX BTC data # # #
-datasource_btcusd = "BITFINEX/BTCUSD.csv"
-btcusd_data = pd.read_csv(
-    "coindata/{}".format(datasource_btcusd.replace("/", " ")), index_col=0
-)
-btcusd_data.index = pd.to_datetime(btcusd_data.index)
+# # # start - read in BITFINEX data # # #
 
-most_recent_stored_btcusd_date = (
-    btcusd_data.sort_index().tail(1).index[0].strftime("%Y-%m-%d")
-)
 todays_date = datetime.date.today() - datetime.timedelta(days=1)
 todays_date = todays_date.strftime("%Y-%m-%d")
 
-if most_recent_stored_btcusd_date != todays_date:
+
+def store_crypto_csv_from_quandl(datasource, todays_date):
     data = q.get(
-        datasource_btcusd.split(".")[0],
-        start_date=most_recent_stored_btcusd_date,
+        datasource.split(".")[0],
+        start_date="2016-01-01",
+        end_date="{}".format(todays_date),
+        api_key=quandl_api_key,
+    )
+    data.info()
+    data["First"] = data.Last.shift(1)
+    data.dropna()
+    data = data.sort_index()
+    # store current df with up-to-date values
+    data.to_csv("coindata/{}".format(datasource.replace("/", " ")), index=True)
+
+
+def update_stored_crypto_csv_from_quandl(
+    datasource, btcusd_data, most_recent_stored_date, todays_date
+):
+    data = q.get(
+        datasource.split(".")[0],
+        start_date=most_recent_stored_date,
         end_date="{}".format(todays_date),
         api_key=quandl_api_key,
     )
@@ -154,10 +164,31 @@ if most_recent_stored_btcusd_date != todays_date:
     btcusd_data = pd.concat([btcusd_data, data])
     btcusd_data = btcusd_data.sort_index()
     # store current df with up-to-date values
-    btcusd_data.to_csv(
-        "coindata/{}".format(datasource_btcusd.replace("/", " ")), index=True
+    btcusd_data.to_csv("coindata/{}".format(datasource.replace("/", " ")), index=True)
+
+
+cryptos = ["BTC", "ETH", "DOGE", "LINK", "OP"]
+selected_crypto = st.selectbox("Select Cryptocurrency", cryptos)
+datasource = f"BITFINEX/{selected_crypto}USD.csv"
+
+try:
+    btcusd_data = pd.read_csv(
+        "coindata/{}".format(datasource.replace("/", " ")), index_col=0
     )
-# # # end - read in BTC data # # #
+except:
+    store_crypto_csv_from_quandl(datasource, todays_date)
+    btcusd_data = pd.read_csv(
+        "coindata/{}".format(datasource.replace("/", " ")), index_col=0
+    )
+
+btcusd_data.index = pd.to_datetime(btcusd_data.index)
+most_recent_stored_date = btcusd_data.sort_index().tail(1).index[0].strftime("%Y-%m-%d")
+
+if most_recent_stored_date != todays_date:
+    update_stored_crypto_csv_from_quandl(
+        datasource, btcusd_data, most_recent_stored_date, todays_date
+    )
+# # # end - read in BITFINEX data # # #
 
 # # # start - data processing # # #
 btcusd_data = btcusd_data.dropna()
@@ -168,8 +199,6 @@ btcusd_data["111_movingaverage"] = pd.Series.rolling(
     btcusd_data["Last"], window=111, min_periods=1
 ).mean()
 # # # end - data processing # # #
-
-st.title("Crypto Charts")
 
 # diagram - Pi Cycle Top Indicator BTC/USD
 fig = go.Figure(
@@ -215,7 +244,7 @@ fig.update_layout(
     autosize=False,
     width=int(1400 / 1.1),
     height=int(800 / 1.1),
-    title="Pi Cycle Top Indicator BTC/USD",
+    title=f"Pi Cycle Top Indicator {selected_crypto}/USD",
 )
 st.plotly_chart(fig)
 
@@ -312,7 +341,7 @@ fig.update_layout(
     width=int(1400 / 1.1),
     height=int(800 / 1.1),
     # TODO check ezb data summed up with fed
-    title="Pi Cycle Top Indicator BTC/FED Total Assets",
+    title=f"Pi Cycle Top Indicator {selected_crypto}/FED Total Assets",
 )
 st.plotly_chart(fig)
 
@@ -545,7 +574,7 @@ fig_vol_bubble.update_layout(
     yaxis_title="Last",
     yaxis2_title="Volume",
     xaxis_rangeslider_visible=True,
-    title=f"BTC Bubble Volume Chart {datasource_btcusd.split('/')[0]}",
+    title=f"{selected_crypto} Bubble Volume Chart {datasource.split('/')[0]}",
     autosize=False,
     width=int(1400 / 1),
     height=int(800 / 1),
@@ -555,6 +584,8 @@ st.plotly_chart(fig_vol_bubble)
 
 
 # # # start - newmoon fullmoon chart # # #
+
+# TODO change it like the Volume Support chart so i can zoom in and have nice candles!
 
 # take the btcusd_data index and iterate over it to get the moon phase for each day
 # the make a new df out of it called df_moon_phase
@@ -673,7 +704,7 @@ fig_btc_moon.update_layout(
     yaxis_title="Last",
     yaxis2_title="Volume",
     xaxis_rangeslider_visible=True,
-    title="BTC moon Chart",
+    title=f"{selected_crypto} moon Chart",
     autosize=False,
     width=int(1400 / 1),
     height=int(800 / 1),
@@ -681,3 +712,78 @@ fig_btc_moon.update_layout(
 
 st.plotly_chart(fig_btc_moon)
 # # # end - plot volume bubble # # #
+
+# # # start - plot Daily Volume Support Resistance Zones # # #
+num_zones = st.number_input("Enter the number of zones", value=10)
+
+data = btcusd_data
+# Defining number of bars for volume profile
+range_min, range_max = np.min(data["Low"]), np.max(data["High"])
+bins = pd.cut(data["Mid"], bins=np.linspace(range_min, range_max, num_zones))
+
+# Volume profile calculation
+vol_profile = data.groupby(bins)["Volume"].sum()
+
+# Normalize volumes to range 1-5 for line widths
+vol_normalized = (vol_profile - vol_profile.min()) / (
+    vol_profile.max() - vol_profile.min()
+) * 4 + 1
+
+# Define support and resistance levels
+support_levels = [level.left for level in vol_profile.index.values]
+resistance_levels = [level.right for level in vol_profile.index.values]
+
+# Plot price and volume profile (support and resistance levels)
+fig_volume_sup_res = go.Figure(
+    data=[
+        go.Candlestick(
+            x=data.index,
+            open=data["First"],
+            high=data["High"],
+            low=data["Low"],
+            close=data["Last"],
+        )
+    ]
+)
+
+# Add support and resistance lines
+for level, width in zip(support_levels, vol_normalized):
+    try:
+        print(level, width)
+        fig_volume_sup_res.add_trace(
+            go.Scatter(
+                x=data.index,
+                y=[level] * len(data.index),
+                mode="lines",
+                line=dict(width=width),
+                name=f"Vol: {int( vol_profile[level] )} Support {level}",
+            )
+        )
+    except:
+        pass
+
+for level, width in zip(resistance_levels, vol_normalized):
+    print(level, width)
+    fig_volume_sup_res.add_trace(
+        go.Scatter(
+            x=data.index,
+            y=[level] * len(data.index),
+            mode="lines",
+            line=dict(width=width),
+            name=f"Vol: {int( vol_profile[level] )} Resistance {level}",
+        )
+    )
+
+fig_volume_sup_res.update_layout(
+    xaxis_title="Date",
+    yaxis_title="Last",
+    # xaxis_rangeslider_visible=True,
+    title="Daily Volume Support Resistance Zones",
+    autosize=False,
+    width=int(1400 / 1),
+    height=int(800 / 1),
+    xaxis_rangeslider_visible=False,
+)
+
+st.plotly_chart(fig_volume_sup_res)
+# # # end - plot Daily Volume Support Resistance Zones # # #
