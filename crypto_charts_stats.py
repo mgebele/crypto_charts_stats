@@ -109,11 +109,11 @@ _max_width_()
 
 
 # datasource = "binance_btcusdt.csv"
-# btcusd_data = pd.read_csv("coindata/{}".format(datasource), index_col=0)
-# btcusd_data.index = pd.to_datetime(btcusd_data.index)
+# xusd_data = pd.read_csv("coindata/{}".format(datasource), index_col=0)
+# xusd_data.index = pd.to_datetime(xusd_data.index)
 
 # most_recent_stored_btcusd_date = (
-#     btcusd_data.sort_index().tail(1).index[0].strftime("%Y-%m-%d")
+#     xusd_data.sort_index().tail(1).index[0].strftime("%Y-%m-%d")
 # )
 
 # todays_date = datetime.date.today()
@@ -122,8 +122,8 @@ _max_width_()
 # if most_recent_stored_btcusd_date != todays_date:
 #     get_binance_btcusd()
 
-#     btcusd_data = pd.read_csv("coindata/{}".format(datasource), index_col=0)
-#     btcusd_data.index = pd.to_datetime(btcusd_data.index)
+#     xusd_data = pd.read_csv("coindata/{}".format(datasource), index_col=0)
+#     xusd_data.index = pd.to_datetime(xusd_data.index)
 
 # # # # end - read in BINANCE BTC data # # #
 
@@ -150,7 +150,7 @@ def store_crypto_csv_from_quandl(datasource, todays_date):
 
 
 def update_stored_crypto_csv_from_quandl(
-    datasource, btcusd_data, most_recent_stored_date, todays_date
+    datasource, xusd_data, most_recent_stored_date, todays_date
 ):
     data = q.get(
         datasource.split(".")[0],
@@ -161,10 +161,10 @@ def update_stored_crypto_csv_from_quandl(
     data.info()
     data["First"] = data.Last.shift(1)
     data.dropna()
-    btcusd_data = pd.concat([btcusd_data, data])
-    btcusd_data = btcusd_data.sort_index()
+    xusd_data = pd.concat([xusd_data, data])
+    xusd_data = xusd_data.sort_index()
     # store current df with up-to-date values
-    btcusd_data.to_csv("coindata/{}".format(datasource.replace("/", " ")), index=True)
+    xusd_data.to_csv("coindata/{}".format(datasource.replace("/", " ")), index=True)
 
 
 cryptos = ["BTC", "ETH", "DOGE", "LINK", "OP"]
@@ -172,39 +172,39 @@ selected_crypto = st.selectbox("Select Cryptocurrency", cryptos)
 datasource = f"BITFINEX/{selected_crypto}USD.csv"
 
 try:
-    btcusd_data = pd.read_csv(
+    xusd_data = pd.read_csv(
         "coindata/{}".format(datasource.replace("/", " ")), index_col=0
     )
 except:
     store_crypto_csv_from_quandl(datasource, todays_date)
-    btcusd_data = pd.read_csv(
+    xusd_data = pd.read_csv(
         "coindata/{}".format(datasource.replace("/", " ")), index_col=0
     )
 
-btcusd_data.index = pd.to_datetime(btcusd_data.index)
-most_recent_stored_date = btcusd_data.sort_index().tail(1).index[0].strftime("%Y-%m-%d")
+xusd_data.index = pd.to_datetime(xusd_data.index)
+most_recent_stored_date = xusd_data.sort_index().tail(1).index[0].strftime("%Y-%m-%d")
 
 if most_recent_stored_date != todays_date:
     update_stored_crypto_csv_from_quandl(
-        datasource, btcusd_data, most_recent_stored_date, todays_date
+        datasource, xusd_data, most_recent_stored_date, todays_date
     )
 # # # end - read in BITFINEX data # # #
 
 # # # start - data processing # # #
-btcusd_data = btcusd_data.dropna()
-btcusd_data["350_movingaverage"] = pd.Series.rolling(
-    btcusd_data["Last"], window=350, min_periods=1
+xusd_data = xusd_data.dropna()
+xusd_data["350_movingaverage"] = pd.Series.rolling(
+    xusd_data["Last"], window=350, min_periods=1
 ).mean()
-btcusd_data["111_movingaverage"] = pd.Series.rolling(
-    btcusd_data["Last"], window=111, min_periods=1
+xusd_data["111_movingaverage"] = pd.Series.rolling(
+    xusd_data["Last"], window=111, min_periods=1
 ).mean()
 # # # end - data processing # # #
 
 # diagram - Pi Cycle Top Indicator BTC/USD
 fig = go.Figure(
     data=go.Scatter(
-        x=btcusd_data.index,
-        y=btcusd_data["Last"],
+        x=xusd_data.index,
+        y=xusd_data["Last"],
         mode="lines",
         marker=dict(
             # size=16,
@@ -216,8 +216,8 @@ fig = go.Figure(
 )
 fig.add_trace(
     go.Scatter(
-        x=btcusd_data.index,
-        y=btcusd_data["350_movingaverage"] * 2,
+        x=xusd_data.index,
+        y=xusd_data["350_movingaverage"] * 2,
         mode="lines",
         name="350_movingaverage",
         marker=dict(
@@ -228,8 +228,8 @@ fig.add_trace(
 )
 fig.add_trace(
     go.Scatter(
-        x=btcusd_data.index,
-        y=btcusd_data["111_movingaverage"],
+        x=xusd_data.index,
+        y=xusd_data["111_movingaverage"],
         mode="lines",
         name="111_movingaverage",
         marker=dict(
@@ -271,26 +271,26 @@ if most_recent_stored_fed_assets_date < todays_date:
     )
 
 # merge fed and btc data and create new features
-btcusd_data_and_fed = pd.merge(
-    btcusd_data, fed_assets_data, left_index=True, right_index=True, how="left"
+xusd_data_and_fed = pd.merge(
+    xusd_data, fed_assets_data, left_index=True, right_index=True, how="left"
 )
-btcusd_data_and_fed["Value"] = btcusd_data_and_fed["Value"].ffill()
-btcusd_data_and_fed = btcusd_data_and_fed.dropna()
-btcusd_data_and_fed["BTC_per_FedAssets"] = (
-    btcusd_data_and_fed["Last"] / btcusd_data_and_fed["Value"]
+xusd_data_and_fed["Value"] = xusd_data_and_fed["Value"].ffill()
+xusd_data_and_fed = xusd_data_and_fed.dropna()
+xusd_data_and_fed["BTC_per_FedAssets"] = (
+    xusd_data_and_fed["Last"] / xusd_data_and_fed["Value"]
 ) * 1000
-btcusd_data_and_fed["350_movingaverage_per_FedAssets"] = pd.Series.rolling(
-    btcusd_data_and_fed["BTC_per_FedAssets"], window=350, min_periods=1
+xusd_data_and_fed["350_movingaverage_per_FedAssets"] = pd.Series.rolling(
+    xusd_data_and_fed["BTC_per_FedAssets"], window=350, min_periods=1
 ).mean()
-btcusd_data_and_fed["111_movingaverage_per_FedAssets"] = pd.Series.rolling(
-    btcusd_data_and_fed["BTC_per_FedAssets"], window=111, min_periods=1
+xusd_data_and_fed["111_movingaverage_per_FedAssets"] = pd.Series.rolling(
+    xusd_data_and_fed["BTC_per_FedAssets"], window=111, min_periods=1
 ).mean()
 
 # diagram - Pi Cycle Top Indicator BTC/FED Total Assets
 fig = go.Figure(
     data=go.Scatter(
-        x=btcusd_data_and_fed.index,
-        y=btcusd_data_and_fed["BTC_per_FedAssets"],
+        x=xusd_data_and_fed.index,
+        y=xusd_data_and_fed["BTC_per_FedAssets"],
         name="BTC/FED",
         mode="lines",
         marker=dict(
@@ -300,8 +300,8 @@ fig = go.Figure(
 )
 fig.add_trace(
     go.Scatter(
-        x=btcusd_data_and_fed.index,
-        y=btcusd_data_and_fed["350_movingaverage_per_FedAssets"],
+        x=xusd_data_and_fed.index,
+        y=xusd_data_and_fed["350_movingaverage_per_FedAssets"],
         mode="lines",
         name="350_MA_per<br>_FedAssets",
         marker=dict(
@@ -312,8 +312,8 @@ fig.add_trace(
 )
 fig.add_trace(
     go.Scatter(
-        x=btcusd_data_and_fed.index,
-        y=btcusd_data_and_fed["350_movingaverage_per_FedAssets"] * 2,
+        x=xusd_data_and_fed.index,
+        y=xusd_data_and_fed["350_movingaverage_per_FedAssets"] * 2,
         mode="lines",
         name="2*350_MA_per<br>_FedAssets",
         marker=dict(
@@ -324,8 +324,8 @@ fig.add_trace(
 )
 fig.add_trace(
     go.Scatter(
-        x=btcusd_data.index,
-        y=btcusd_data_and_fed["111_movingaverage_per_FedAssets"],
+        x=xusd_data.index,
+        y=xusd_data_and_fed["111_movingaverage_per_FedAssets"],
         mode="lines",
         name="111_MA_per<br>_FedAssets",
         marker=dict(
@@ -419,7 +419,7 @@ FRED_RRPONTSYD_data = FRED_RRPONTSYD_data[
 fred_total_assets = fred_total_assets[(fred_total_assets.index > "2020-08-11 00:00:00")]
 FRED_WTREGEN_data = FRED_WTREGEN_data[(FRED_WTREGEN_data.index > "2020-08-11 00:00:00")]
 data_SP500 = data_SP500[(data_SP500.index > "2020-08-11 00:00:00")]
-btcusd_data = btcusd_data[(btcusd_data.index > "2020-08-11 00:00:00")]
+xusd_data = xusd_data[(xusd_data.index > "2020-08-11 00:00:00")]
 
 # filter for datetime to allign all fred data sources!
 merged_FRED_RRPONTSYD_data = pd.merge(
@@ -465,12 +465,12 @@ dfdiffsp500_netliq["diff"] = (
 # Scale features to be between 0 and 1 to plot it together in one chart
 # Create a scaler object
 scaler = MinMaxScaler()
-# Fit the scaler to the btcusd_data and transform it
-btcusd_data_scaled = scaler.fit_transform(btcusd_data["Last"].values.reshape(-1, 1))
+# Fit the scaler to the xusd_data and transform it
+xusd_data_scaled = scaler.fit_transform(xusd_data["Last"].values.reshape(-1, 1))
 # Now, fit the scaler to the netLiquidity data and transform it
 netLiquidity_scaled = scaler.fit_transform(netLiquidity.values.reshape(-1, 1))
 # Convert these arrays back into pandas Series, keeping the original indices
-btcusd_data_scaled = pd.Series(btcusd_data_scaled.flatten(), index=btcusd_data.index)
+xusd_data_scaled = pd.Series(xusd_data_scaled.flatten(), index=xusd_data.index)
 netLiquidity_scaled = pd.Series(netLiquidity_scaled.flatten(), index=netLiquidity.index)
 
 
@@ -478,8 +478,8 @@ netLiquidity_scaled = pd.Series(netLiquidity_scaled.flatten(), index=netLiquidit
 fig_net_liq = make_subplots(specs=[[{"secondary_y": True}]])
 fig_net_liq.add_trace(
     go.Scatter(
-        x=btcusd_data_scaled.index,
-        y=btcusd_data_scaled + 0.4,
+        x=xusd_data_scaled.index,
+        y=xusd_data_scaled + 0.4,
         name="BTC (Scaled)",
         mode="lines",
         marker=dict(color="red"),
@@ -531,20 +531,20 @@ st.plotly_chart(fig_net_liq)
 bubble_size = st.slider("Bubble Size", min_value=0, max_value=100, value=30)
 
 # Normalizing the 'Volume'
-btcusd_data["norm_volume"] = (btcusd_data["Volume"] - btcusd_data["Volume"].min()) / (
-    btcusd_data["Volume"].max() - btcusd_data["Volume"].min()
+xusd_data["norm_volume"] = (xusd_data["Volume"] - xusd_data["Volume"].min()) / (
+    xusd_data["Volume"].max() - xusd_data["Volume"].min()
 )
 # Calculate daily price change
-btcusd_data["daily_change"] = btcusd_data["Last"].diff()
+xusd_data["daily_change"] = xusd_data["Last"].diff()
 # Assign colors based on positive or negative change
-btcusd_data["color"] = np.where(btcusd_data["daily_change"] > 0, "green", "red")
+xusd_data["color"] = np.where(xusd_data["daily_change"] > 0, "green", "red")
 # Create figure with secondary y-axis
 fig_vol_bubble = make_subplots(specs=[[{"secondary_y": True}]])
 # Add traces
 fig_vol_bubble.add_trace(
     go.Bar(
-        x=btcusd_data.index,
-        y=btcusd_data["Volume"],
+        x=xusd_data.index,
+        y=xusd_data["Volume"],
         name="Volume",
         marker=dict(
             color="black",
@@ -556,12 +556,12 @@ fig_vol_bubble.add_trace(
 
 fig_vol_bubble.add_trace(
     go.Scatter(
-        x=btcusd_data.index,
-        y=btcusd_data["Last"],
+        x=xusd_data.index,
+        y=xusd_data["Last"],
         mode="markers+lines",
         marker=dict(
-            size=btcusd_data["norm_volume"] * bubble_size,  # Scale marker size
-            color=btcusd_data["color"],  # Assign color based on 'daily_change'
+            size=xusd_data["norm_volume"] * bubble_size,  # Scale marker size
+            color=xusd_data["color"],  # Assign color based on 'daily_change'
         ),
         name="Last",
         line=dict(color="black"),
@@ -587,10 +587,10 @@ st.plotly_chart(fig_vol_bubble)
 
 # TODO change it like the Volume Support chart so i can zoom in and have nice candles!
 
-# take the btcusd_data index and iterate over it to get the moon phase for each day
+# take the xusd_data index and iterate over it to get the moon phase for each day
 # the make a new df out of it called df_moon_phase
 df_moon_phase = pd.DataFrame()
-for i in btcusd_data.index:
+for i in xusd_data.index:
     df_moon_phase = df_moon_phase.append(
         {"date": i, "moon_phase": moon.phase(i)}, ignore_index=True
     )
@@ -600,37 +600,37 @@ df_moon_phase["date"] = pd.to_datetime(df_moon_phase["date"])
 df_moon_phase["date"] = df_moon_phase["date"].dt.date
 df_moon_phase = df_moon_phase.set_index("date")
 
-# check the relationship between moon phase and btcusd_data
+# check the relationship between moon phase and xusd_data
 # merge sp500 with moon phase
-btcusd_data_and_moon_phase = pd.merge(
-    btcusd_data, df_moon_phase, left_index=True, right_index=True, how="left"
+xusd_data_and_moon_phase = pd.merge(
+    xusd_data, df_moon_phase, left_index=True, right_index=True, how="left"
 )
-btcusd_data_and_moon_phase = btcusd_data_and_moon_phase.dropna()
+xusd_data_and_moon_phase = xusd_data_and_moon_phase.dropna()
 
 # 0 .. 6.99	New moon
 # 7 .. 13.99	First quarter
 # 14 .. 20.99	Full moon
 # 21 .. 27.99	Last quarter
 # create a new column called moon_phase_category and fill it with the moon_phase_category
-btcusd_data_and_moon_phase["moon_phase_category"] = ""
-btcusd_data_and_moon_phase.loc[
-    (btcusd_data_and_moon_phase["moon_phase"] >= 0)
-    & (btcusd_data_and_moon_phase["moon_phase"] <= 6.99),
+xusd_data_and_moon_phase["moon_phase_category"] = ""
+xusd_data_and_moon_phase.loc[
+    (xusd_data_and_moon_phase["moon_phase"] >= 0)
+    & (xusd_data_and_moon_phase["moon_phase"] <= 6.99),
     "moon_phase_category",
 ] = 0
-btcusd_data_and_moon_phase.loc[
-    (btcusd_data_and_moon_phase["moon_phase"] >= 7)
-    & (btcusd_data_and_moon_phase["moon_phase"] <= 13.99),
+xusd_data_and_moon_phase.loc[
+    (xusd_data_and_moon_phase["moon_phase"] >= 7)
+    & (xusd_data_and_moon_phase["moon_phase"] <= 13.99),
     "moon_phase_category",
 ] = 7
-btcusd_data_and_moon_phase.loc[
-    (btcusd_data_and_moon_phase["moon_phase"] >= 14)
-    & (btcusd_data_and_moon_phase["moon_phase"] <= 20.99),
+xusd_data_and_moon_phase.loc[
+    (xusd_data_and_moon_phase["moon_phase"] >= 14)
+    & (xusd_data_and_moon_phase["moon_phase"] <= 20.99),
     "moon_phase_category",
 ] = 14
-btcusd_data_and_moon_phase.loc[
-    (btcusd_data_and_moon_phase["moon_phase"] >= 21)
-    & (btcusd_data_and_moon_phase["moon_phase"] <= 27.99),
+xusd_data_and_moon_phase.loc[
+    (xusd_data_and_moon_phase["moon_phase"] >= 21)
+    & (xusd_data_and_moon_phase["moon_phase"] <= 27.99),
     "moon_phase_category",
 ] = 21
 
@@ -640,8 +640,8 @@ fig_btc_moon = make_subplots(specs=[[{"secondary_y": True}]])
 # Add the scatter plot for the 'Last' data
 fig_btc_moon.add_trace(
     go.Scatter(
-        x=btcusd_data_and_moon_phase.index,
-        y=btcusd_data_and_moon_phase["Last"],
+        x=xusd_data_and_moon_phase.index,
+        y=xusd_data_and_moon_phase["Last"],
         mode="lines",
         name="Last",
         line=dict(color="red"),
@@ -658,19 +658,19 @@ text_full_moon = []
 last_moon_phase = None
 
 # Loop over the dataframe
-for i in range(len(btcusd_data_and_moon_phase)):
-    current_moon_phase = btcusd_data_and_moon_phase["moon_phase_category"].iloc[i]
+for i in range(len(xusd_data_and_moon_phase)):
+    current_moon_phase = xusd_data_and_moon_phase["moon_phase_category"].iloc[i]
     if current_moon_phase != last_moon_phase:
         if current_moon_phase == 0:
             # Add the date to the x list, 0.9 to the y list, and the hover text to the text list
-            x_new_moon.append(btcusd_data_and_moon_phase.index[i])
-            y_new_moon.append(btcusd_data_and_moon_phase.Last[i] * 1.2)
-            text_new_moon.append(f"New Moon: {btcusd_data_and_moon_phase.index[i]}")
+            x_new_moon.append(xusd_data_and_moon_phase.index[i])
+            y_new_moon.append(xusd_data_and_moon_phase.Last[i] * 1.2)
+            text_new_moon.append(f"New Moon: {xusd_data_and_moon_phase.index[i]}")
         elif current_moon_phase == 14:
             # Add the date to the x list, 0 to the y list, and the hover text to the text list
-            x_full_moon.append(btcusd_data_and_moon_phase.index[i])
-            y_full_moon.append(btcusd_data_and_moon_phase.Last[i] * 0.8)
-            text_full_moon.append(f"Full Moon: {btcusd_data_and_moon_phase.index[i]}")
+            x_full_moon.append(xusd_data_and_moon_phase.index[i])
+            y_full_moon.append(xusd_data_and_moon_phase.Last[i] * 0.8)
+            text_full_moon.append(f"Full Moon: {xusd_data_and_moon_phase.index[i]}")
         last_moon_phase = current_moon_phase
 
 # Add a scatter plot to the figure for the new moon points
@@ -704,7 +704,7 @@ fig_btc_moon.update_layout(
     yaxis_title="Last",
     yaxis2_title="Volume",
     xaxis_rangeslider_visible=True,
-    title=f"{selected_crypto} moon Chart",
+    title=f"{selected_crypto} moon Chart {datasource.split('/')[0]}",
     autosize=False,
     width=int(1400 / 1),
     height=int(800 / 1),
@@ -716,7 +716,7 @@ st.plotly_chart(fig_btc_moon)
 # # # start - plot Daily Volume Support Resistance Zones # # #
 num_zones = st.number_input("Enter the number of zones", value=10)
 
-data = btcusd_data
+data = xusd_data
 # Defining number of bars for volume profile
 range_min, range_max = np.min(data["Low"]), np.max(data["High"])
 bins = pd.cut(data["Mid"], bins=np.linspace(range_min, range_max, num_zones))
@@ -778,7 +778,7 @@ fig_volume_sup_res.update_layout(
     xaxis_title="Date",
     yaxis_title="Last",
     # xaxis_rangeslider_visible=True,
-    title="Daily Volume Support Resistance Zones",
+    title=f"{selected_crypto} Daily Volume Support Resistance Zones {datasource.split('/')[0]}",
     autosize=False,
     width=int(1400 / 1),
     height=int(800 / 1),
