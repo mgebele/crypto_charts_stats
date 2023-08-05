@@ -746,7 +746,6 @@ fig_volume_sup_res = go.Figure(
     ]
 )
 
-
 # Add support and resistance lines
 for level in support_levels:
     width = vol_normalized[level]
@@ -756,7 +755,7 @@ for level in support_levels:
             y=[level] * len(xusd_data_and_moon_phase.index),
             mode="lines",
             line=dict(width=width),
-            name=f"Support {level} Vol: {vol_profile[level]}",
+            name=f"Vol: {vol_profile[level]}",
         )
     )
 
@@ -773,3 +772,88 @@ fig_volume_sup_res.update_layout(
 
 st.plotly_chart(fig_volume_sup_res)
 # # # end - plot Daily Volume Support Resistance Zones # # #
+
+
+# # # start - slider plot Daily Volume Support Resistance Zones # # #
+# Create columns for layout
+col1, col2, col3 = st.columns(3)
+# Create a slider to select the number of days to go back
+with col1:
+    days_to_include = st.slider(
+        "Days to consider:",
+        min_value=5,
+        max_value=len(xusd_data_and_moon_phase),
+        value=len(xusd_data_and_moon_phase),
+    )
+
+with col2:
+    num_bars = st.number_input("Bars:", value=12)
+
+with col3:
+    bin_percentage = st.number_input("Bin distance percentage:", value=10)
+
+# Filter the data based on the days selected
+xusd_data_and_moon_phase = xusd_data_and_moon_phase.iloc[-days_to_include:]
+
+xusd_data_and_moon_phase["Bin_Width"] = (
+    xusd_data_and_moon_phase["Last"] * bin_percentage / 100
+)
+bins = [
+    xusd_data_and_moon_phase["Last"].iloc[0]
+    - xusd_data_and_moon_phase["Bin_Width"].iloc[0]
+]
+for i in range(1, len(xusd_data_and_moon_phase)):
+    bins.append(
+        bins[-1]
+        + (
+            xusd_data_and_moon_phase["Bin_Width"].iloc[i]
+            + xusd_data_and_moon_phase["Bin_Width"].iloc[i - 1]
+        )
+        / 2
+    )
+
+xusd_data_and_moon_phase["Bin"] = pd.cut(
+    xusd_data_and_moon_phase["Last"], bins, labels=(bins[:-1]), include_lowest=True
+)
+binned_volume = xusd_data_and_moon_phase.groupby("Bin").size()
+top_bins = binned_volume.nlargest(num_bars)
+
+vol_normalized = (top_bins - top_bins.min()) / (top_bins.max() - top_bins.min()) * 4 + 1
+
+fig_volume_sup_res_slider = go.Figure(
+    data=[
+        go.Candlestick(
+            x=xusd_data_and_moon_phase.index,
+            open=xusd_data_and_moon_phase["First"],
+            high=xusd_data_and_moon_phase["High"],
+            low=xusd_data_and_moon_phase["Low"],
+            close=xusd_data_and_moon_phase["Last"],
+        )
+    ]
+)
+
+for level, vol in top_bins.items():
+    width = vol_normalized[level]
+    fig_volume_sup_res_slider.add_trace(
+        go.Scatter(
+            x=xusd_data_and_moon_phase.index,
+            y=[level] * len(xusd_data_and_moon_phase.index),
+            mode="lines",
+            line=dict(width=width),
+            name=f"Vol: {vol}",
+        )
+    )
+
+fig_volume_sup_res_slider.update_layout(
+    xaxis_title="Date",
+    yaxis_title="Last",
+    # xaxis_rangeslider_visible=True,
+    title=f"{selected_crypto} Daily Volume Support Resistance Zones {datasource.split('/')[0]}",
+    autosize=False,
+    width=int(1400 / 1),
+    height=int(800 / 1),
+    xaxis_rangeslider_visible=False,
+)
+
+st.plotly_chart(fig_volume_sup_res_slider)
+# # # end - slider plot Daily Volume Support Resistance Zones # # #
