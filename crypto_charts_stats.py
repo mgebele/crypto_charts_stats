@@ -16,6 +16,9 @@ import json
 import time
 import warnings
 from astral import moon
+import warnings
+
+warnings.filterwarnings("ignore", category=FutureWarning)
 
 st.set_page_config(layout="wide")
 import requests
@@ -167,7 +170,7 @@ def update_stored_crypto_csv_from_quandl(
     xusd_data.to_csv("coindata/{}".format(datasource.replace("/", " ")), index=True)
 
 
-cryptos = ["BTC", "ETH", "DOGE", "LINK", "OP"]
+cryptos = ["BTC", "ETH", "DOGE", "LINK", "OP", "MATIC", "XRP", "LTC", "EOS"]
 selected_crypto = st.selectbox("Select Cryptocurrency", cryptos)
 datasource = f"BITFINEX/{selected_crypto}USD.csv"
 
@@ -679,7 +682,7 @@ fig_btc_moon.add_trace(
         x=x_new_moon,
         y=y_new_moon,
         mode="markers",
-        marker=dict(symbol="circle", size=10, color="black"),
+        marker=dict(symbol="circle", size=10, color="gray"),
         text=text_new_moon,
         hoverinfo="text",
         showlegend=False,
@@ -714,63 +717,46 @@ st.plotly_chart(fig_btc_moon)
 # # # end - plot volume bubble # # #
 
 # # # start - plot Daily Volume Support Resistance Zones # # #
-num_zones = st.number_input("Enter the number of zones", value=10)
+num_zones = st.number_input("Enter the number of zones", value=12)
+# num_zones_int = int(num_zones)
 
-data = xusd_data
-# Defining number of bars for volume profile
-range_min, range_max = np.min(data["Low"]), np.max(data["High"])
-bins = pd.cut(data["Mid"], bins=np.linspace(range_min, range_max, num_zones))
+# Calculate frequencies of prices
+vol_profile = xusd_data_and_moon_phase["Last"].value_counts().nlargest(num_zones)
+print(vol_profile)
 
-# Volume profile calculation
-vol_profile = data.groupby(bins)["Volume"].sum()
+# Define support and resistance levels
+support_levels = vol_profile.index.sort_values()
+resistance_levels = support_levels[1:]
 
 # Normalize volumes to range 1-5 for line widths
 vol_normalized = (vol_profile - vol_profile.min()) / (
     vol_profile.max() - vol_profile.min()
 ) * 4 + 1
 
-# Define support and resistance levels
-support_levels = [level.left for level in vol_profile.index.values]
-resistance_levels = [level.right for level in vol_profile.index.values]
-
 # Plot price and volume profile (support and resistance levels)
 fig_volume_sup_res = go.Figure(
     data=[
         go.Candlestick(
-            x=data.index,
-            open=data["First"],
-            high=data["High"],
-            low=data["Low"],
-            close=data["Last"],
+            x=xusd_data_and_moon_phase.index,
+            open=xusd_data_and_moon_phase["First"],
+            high=xusd_data_and_moon_phase["High"],
+            low=xusd_data_and_moon_phase["Low"],
+            close=xusd_data_and_moon_phase["Last"],
         )
     ]
 )
 
-# Add support and resistance lines
-for level, width in zip(support_levels, vol_normalized):
-    try:
-        print(level, width)
-        fig_volume_sup_res.add_trace(
-            go.Scatter(
-                x=data.index,
-                y=[level] * len(data.index),
-                mode="lines",
-                line=dict(width=width),
-                name=f"Vol: {int( vol_profile[level] )} Support {level}",
-            )
-        )
-    except:
-        pass
 
-for level, width in zip(resistance_levels, vol_normalized):
-    print(level, width)
+# Add support and resistance lines
+for level in support_levels:
+    width = vol_normalized[level]
     fig_volume_sup_res.add_trace(
         go.Scatter(
-            x=data.index,
-            y=[level] * len(data.index),
+            x=xusd_data_and_moon_phase.index,
+            y=[level] * len(xusd_data_and_moon_phase.index),
             mode="lines",
             line=dict(width=width),
-            name=f"Vol: {int( vol_profile[level] )} Resistance {level}",
+            name=f"Support {level} Vol: {vol_profile[level]}",
         )
     )
 
