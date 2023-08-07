@@ -251,8 +251,6 @@ fig.update_layout(
 )
 st.plotly_chart(fig)
 
-# TODO: Future integrate ETH?
-
 # Get FED data from quandl and store it
 fed_assets_quandl_key = "FED/RESPPA_N_WW"
 fed_assets_data = pd.read_csv(
@@ -576,7 +574,7 @@ fig_vol_bubble.update_layout(
     xaxis_title="Date",
     yaxis_title="Last",
     yaxis2_title="Volume",
-    xaxis_rangeslider_visible=True,
+    xaxis_rangeslider_visible=False,
     title=f"{selected_crypto} Bubble Volume Chart {datasource.split('/')[0]}",
     autosize=False,
     width=int(1400 / 1),
@@ -639,16 +637,18 @@ xusd_data_and_moon_phase.loc[
 
 
 # make a new plot and plot the daily_price_change of btc by time on the x-axis
-fig_btc_moon = make_subplots(specs=[[{"secondary_y": True}]])
+# fig_btc_moon = make_subplots(specs=[[{"secondary_y": True}]])
 # Add the scatter plot for the 'Last' data
-fig_btc_moon.add_trace(
-    go.Scatter(
-        x=xusd_data_and_moon_phase.index,
-        y=xusd_data_and_moon_phase["Last"],
-        mode="lines",
-        name="Last",
-        line=dict(color="red"),
-    )
+fig_btc_moon = go.Figure(
+    data=[
+        go.Candlestick(
+            x=xusd_data_and_moon_phase.index,
+            open=xusd_data_and_moon_phase["First"],
+            high=xusd_data_and_moon_phase["High"],
+            low=xusd_data_and_moon_phase["Low"],
+            close=xusd_data_and_moon_phase["Last"],
+        )
+    ]
 )
 # Create empty lists to hold the x, y, and text values
 x_new_moon = []
@@ -659,7 +659,6 @@ text_new_moon = []
 text_full_moon = []
 
 last_moon_phase = None
-
 # Loop over the dataframe
 for i in range(len(xusd_data_and_moon_phase)):
     current_moon_phase = xusd_data_and_moon_phase["moon_phase_category"].iloc[i]
@@ -705,16 +704,17 @@ fig_btc_moon.add_trace(
 fig_btc_moon.update_layout(
     xaxis_title="Date",
     yaxis_title="Last",
-    yaxis2_title="Volume",
-    xaxis_rangeslider_visible=True,
+    # xaxis_rangeslider_visible=True,
     title=f"{selected_crypto} moon Chart {datasource.split('/')[0]}",
     autosize=False,
     width=int(1400 / 1),
     height=int(800 / 1),
+    xaxis_rangeslider_visible=False,
 )
 
 st.plotly_chart(fig_btc_moon)
 # # # end - plot volume bubble # # #
+
 
 # # # start - plot Daily Volume Support Resistance Zones # # #
 num_zones = st.number_input("Enter the number of zones", value=12)
