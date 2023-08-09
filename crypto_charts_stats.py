@@ -701,10 +701,29 @@ fig_btc_moon.add_trace(
     )
 )
 
+
+fig_btc_moon.add_trace(
+    go.Scatter(
+        x=xusd_data_and_moon_phase.index,
+        y=xusd_data_and_moon_phase.moon_phase,
+        mode="lines",
+        hoverinfo="text+y",  # It will show the hover text and y-value
+        hovertext=xusd_data_and_moon_phase.moon_phase.apply(
+            lambda x: f"Moon Phase: {x}"
+        ),  # Showing moon phase value as hover text
+        yaxis="y2",  # Specifies the usage of secondary y-axis
+    )
+)
+
+# Update the layout to show the secondary y-axis on the right and other customizations
 fig_btc_moon.update_layout(
     xaxis_title="Date",
     yaxis_title="Last",
-    # xaxis_rangeslider_visible=True,
+    yaxis2=dict(
+        title="Moon Phase",
+        overlaying="y",  # Ensures it overlays on the primary y-axis
+        side="right",  # Positioning the y-axis on the right
+    ),
     title=f"{selected_crypto} moon Chart {datasource.split('/')[0]}",
     autosize=False,
     width=int(1400 / 1),
@@ -716,62 +735,62 @@ st.plotly_chart(fig_btc_moon)
 # # # end - plot volume bubble # # #
 
 
-# # # start - plot Daily Volume Support Resistance Zones # # #
-num_zones = st.number_input("Enter the number of zones", value=12)
-# num_zones_int = int(num_zones)
+# # # # start - plot Daily Volume Support Resistance Zones # # #
+# num_zones = st.number_input("Enter the number of zones", value=12)
+# # num_zones_int = int(num_zones)
 
-# Calculate frequencies of prices
-vol_profile = xusd_data_and_moon_phase["Last"].value_counts().nlargest(num_zones)
-print(vol_profile)
+# # Calculate frequencies of prices
+# vol_profile = xusd_data_and_moon_phase["Last"].value_counts().nlargest(num_zones)
+# print(vol_profile)
 
-# Define support and resistance levels
-support_levels = vol_profile.index.sort_values()
-resistance_levels = support_levels[1:]
+# # Define support and resistance levels
+# support_levels = vol_profile.index.sort_values()
+# resistance_levels = support_levels[1:]
 
-# Normalize volumes to range 1-5 for line widths
-vol_normalized = (vol_profile - vol_profile.min()) / (
-    vol_profile.max() - vol_profile.min()
-) * 4 + 1
+# # Normalize volumes to range 1-5 for line widths
+# vol_normalized = (vol_profile - vol_profile.min()) / (
+#     vol_profile.max() - vol_profile.min()
+# ) * 4 + 1
 
-# Plot price and volume profile (support and resistance levels)
-fig_volume_sup_res = go.Figure(
-    data=[
-        go.Candlestick(
-            x=xusd_data_and_moon_phase.index,
-            open=xusd_data_and_moon_phase["First"],
-            high=xusd_data_and_moon_phase["High"],
-            low=xusd_data_and_moon_phase["Low"],
-            close=xusd_data_and_moon_phase["Last"],
-        )
-    ]
-)
+# # Plot price and volume profile (support and resistance levels)
+# fig_volume_sup_res = go.Figure(
+#     data=[
+#         go.Candlestick(
+#             x=xusd_data_and_moon_phase.index,
+#             open=xusd_data_and_moon_phase["First"],
+#             high=xusd_data_and_moon_phase["High"],
+#             low=xusd_data_and_moon_phase["Low"],
+#             close=xusd_data_and_moon_phase["Last"],
+#         )
+#     ]
+# )
 
-# Add support and resistance lines
-for level in support_levels:
-    width = vol_normalized[level]
-    fig_volume_sup_res.add_trace(
-        go.Scatter(
-            x=xusd_data_and_moon_phase.index,
-            y=[level] * len(xusd_data_and_moon_phase.index),
-            mode="lines",
-            line=dict(width=width),
-            name=f"Vol: {vol_profile[level]}",
-        )
-    )
+# # Add support and resistance lines
+# for level in support_levels:
+#     width = vol_normalized[level]
+#     fig_volume_sup_res.add_trace(
+#         go.Scatter(
+#             x=xusd_data_and_moon_phase.index,
+#             y=[level] * len(xusd_data_and_moon_phase.index),
+#             mode="lines",
+#             line=dict(width=width),
+#             name=f"Vol: {vol_profile[level]}",
+#         )
+#     )
 
-fig_volume_sup_res.update_layout(
-    xaxis_title="Date",
-    yaxis_title="Last",
-    # xaxis_rangeslider_visible=True,
-    title=f"{selected_crypto} Daily Volume Support Resistance Zones {datasource.split('/')[0]}",
-    autosize=False,
-    width=int(1400 / 1),
-    height=int(800 / 1),
-    xaxis_rangeslider_visible=False,
-)
+# fig_volume_sup_res.update_layout(
+#     xaxis_title="Date",
+#     yaxis_title="Last",
+#     # xaxis_rangeslider_visible=True,
+#     title=f"{selected_crypto} Daily Volume Support Resistance Zones {datasource.split('/')[0]}",
+#     autosize=False,
+#     width=int(1400 / 1),
+#     height=int(800 / 1),
+#     xaxis_rangeslider_visible=False,
+# )
 
-st.plotly_chart(fig_volume_sup_res)
-# # # end - plot Daily Volume Support Resistance Zones # # #
+# st.plotly_chart(fig_volume_sup_res)
+# # # # end - plot Daily Volume Support Resistance Zones # # #
 
 
 # # # start - slider plot Daily Volume Support Resistance Zones # # #
