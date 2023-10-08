@@ -170,19 +170,7 @@ def update_stored_crypto_csv_from_quandl(
     xusd_data.to_csv("coindata/{}".format(datasource.replace("/", " ")), index=True)
 
 
-cryptos = [
-    "BTC",
-    "ETH",
-    "DOGE",
-    "LINK",
-    "OP",
-    "MATIC",
-    "XRP",
-    "LTC",
-    "EOS",
-    "MANA",
-    "SAND",
-]
+cryptos = ["BTC", "ETH", "DOGE", "LINK", "OP", "MATIC", "XRP", "LTC", "EOS", "MANA", "SAND"]
 selected_crypto = st.selectbox("Select Cryptocurrency", cryptos)
 datasource = f"BITFINEX/{selected_crypto}USD.csv"
 
@@ -604,17 +592,17 @@ st.plotly_chart(fig_vol_bubble)
 # the make a new df out of it called df_moon_phase
 df_moon_phase = pd.DataFrame()
 
+# Debugging prints
+print("Type of df_moon_phase:", type(df_moon_phase))
+print("Does append method exist:", hasattr(df_moon_phase, 'append'))
+
 for i in xusd_data.index:
-    if isinstance(df_moon_phase, pd.DataFrame):
+    if hasattr(df_moon_phase, 'append'):  # Debugging line
         df_moon_phase = df_moon_phase.append(
             {"date": i, "moon_phase": moon.phase(i)}, ignore_index=True
         )
     else:
-        print(
-            "df_moon_phase is not a DataFrame at this point. It is:",
-            type(df_moon_phase),
-        )
-
+        print("DataFrame object has no method 'append'. Something is off.")
 
 df_moon_phase["moon_phase"] = df_moon_phase["moon_phase"].fillna(0).astype(int)
 df_moon_phase["date"] = pd.to_datetime(df_moon_phase["date"])
