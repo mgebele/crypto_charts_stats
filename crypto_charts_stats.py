@@ -11,7 +11,6 @@ import plotly.graph_objects as go
 import quandl as q
 import streamlit as st
 import requests
-import pandas as pd
 import json
 import time
 import warnings
@@ -170,7 +169,19 @@ def update_stored_crypto_csv_from_quandl(
     xusd_data.to_csv("coindata/{}".format(datasource.replace("/", " ")), index=True)
 
 
-cryptos = ["BTC", "ETH", "DOGE", "LINK", "OP", "MATIC", "XRP", "LTC", "EOS", "MANA", "SAND"]
+cryptos = [
+    "BTC",
+    "ETH",
+    "DOGE",
+    "LINK",
+    "OP",
+    "MATIC",
+    "XRP",
+    "LTC",
+    "EOS",
+    "MANA",
+    "SAND",
+]
 selected_crypto = st.selectbox("Select Cryptocurrency", cryptos)
 datasource = f"BITFINEX/{selected_crypto}USD.csv"
 
@@ -594,10 +605,10 @@ df_moon_phase = pd.DataFrame()
 
 # Debugging prints
 print("Type of df_moon_phase:", type(df_moon_phase))
-print("Does append method exist:", hasattr(df_moon_phase, 'append'))
+print("Does append method exist:", hasattr(df_moon_phase, "append"))
 
 for i in xusd_data.index:
-    if hasattr(df_moon_phase, 'append'):  # Debugging line
+    if hasattr(df_moon_phase, "append"):  # Debugging line
         df_moon_phase = df_moon_phase.append(
             {"date": i, "moon_phase": moon.phase(i)}, ignore_index=True
         )
