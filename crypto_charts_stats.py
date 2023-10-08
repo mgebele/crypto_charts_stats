@@ -170,7 +170,7 @@ def update_stored_crypto_csv_from_quandl(
     xusd_data.to_csv("coindata/{}".format(datasource.replace("/", " ")), index=True)
 
 
-cryptos = ["BTC", "ETH", "DOGE", "LINK", "OP", "MATIC", "XRP", "LTC", "EOS"]
+cryptos = ["BTC", "ETH", "DOGE", "LINK", "OP", "MATIC", "XRP", "LTC", "EOS", "MANA", "SAND"]
 selected_crypto = st.selectbox("Select Cryptocurrency", cryptos)
 datasource = f"BITFINEX/{selected_crypto}USD.csv"
 
@@ -259,10 +259,10 @@ fed_assets_data = pd.read_csv(
 fed_assets_data.index = pd.to_datetime(fed_assets_data.index)
 most_recent_stored_fed_assets_date = fed_assets_data.sort_index().tail(1).index[0]
 todays_date = datetime.date.today() - datetime.timedelta(days=6)
-todays_date = todays_date
 
 # every wednesday we get the data from the fed
-if most_recent_stored_fed_assets_date < todays_date:
+# Convert pd.Timestamp to datetime.date for comparison
+if most_recent_stored_fed_assets_date.date() < todays_date:
     fed_assets_data = q.get(fed_assets_quandl_key, api_key=quandl_api_key)
     fed_assets_data = fed_assets_data.dropna()
     fed_assets_data = fed_assets_data.sort_index()
