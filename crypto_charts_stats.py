@@ -170,7 +170,19 @@ def update_stored_crypto_csv_from_quandl(
     xusd_data.to_csv("coindata/{}".format(datasource.replace("/", " ")), index=True)
 
 
-cryptos = ["BTC", "ETH", "DOGE", "LINK", "OP", "MATIC", "XRP", "LTC", "EOS", "MANA", "SAND"]
+cryptos = [
+    "BTC",
+    "ETH",
+    "DOGE",
+    "LINK",
+    "OP",
+    "MATIC",
+    "XRP",
+    "LTC",
+    "EOS",
+    "MANA",
+    "SAND",
+]
 selected_crypto = st.selectbox("Select Cryptocurrency", cryptos)
 datasource = f"BITFINEX/{selected_crypto}USD.csv"
 
@@ -591,10 +603,18 @@ st.plotly_chart(fig_vol_bubble)
 # take the xusd_data index and iterate over it to get the moon phase for each day
 # the make a new df out of it called df_moon_phase
 df_moon_phase = pd.DataFrame()
+
 for i in xusd_data.index:
-    df_moon_phase = df_moon_phase.append(
-        {"date": i, "moon_phase": moon.phase(i)}, ignore_index=True
-    )
+    if isinstance(df_moon_phase, pd.DataFrame):
+        df_moon_phase = df_moon_phase.append(
+            {"date": i, "moon_phase": moon.phase(i)}, ignore_index=True
+        )
+    else:
+        print(
+            "df_moon_phase is not a DataFrame at this point. It is:",
+            type(df_moon_phase),
+        )
+
 
 df_moon_phase["moon_phase"] = df_moon_phase["moon_phase"].fillna(0).astype(int)
 df_moon_phase["date"] = pd.to_datetime(df_moon_phase["date"])
