@@ -601,19 +601,16 @@ st.plotly_chart(fig_vol_bubble)
 
 # take the xusd_data index and iterate over it to get the moon phase for each day
 # the make a new df out of it called df_moon_phase
-df_moon_phase = pd.DataFrame()
+# Initialize an empty list to hold the rows.
+list_of_rows = []
 
-# Debugging prints
-print("Type of df_moon_phase:", type(df_moon_phase))
-print("Does append method exist:", hasattr(df_moon_phase, "append"))
-
+# Loop to populate the list_of_rows
 for i in xusd_data.index:
-    if hasattr(df_moon_phase, "append"):  # Debugging line
-        df_moon_phase = df_moon_phase.append(
-            {"date": i, "moon_phase": moon.phase(i)}, ignore_index=True
-        )
-    else:
-        print("DataFrame object has no method 'append'. Something is off.")
+    list_of_rows.append([i, moon.phase(i)])
+
+# Convert the list of rows to a DataFrame.
+df_moon_phase = pd.DataFrame(list_of_rows, columns=["date", "moon_phase"])
+
 
 df_moon_phase["moon_phase"] = df_moon_phase["moon_phase"].fillna(0).astype(int)
 df_moon_phase["date"] = pd.to_datetime(df_moon_phase["date"])
