@@ -51,122 +51,64 @@ _max_width_()
 
 
 # # # start - read in BINANCE BTC data # # # binance only goes back to 2017!
-# def get_binance_btcusd():
-#     URL = "https://api.binance.com/api/v3/klines"
-#     start_str = "2014-01-01 00:00:00"
-#     fmt = "%Y-%m-%d %H:%M:%S"
-#     start_time = int(time.mktime(time.strptime(start_str, fmt)) * 1000)
-#     last_open_time = 0  # added this line
+def get_binance_crypto_usdt(selected_crypto):
+    URL = "https://api.binance.com/api/v3/klines"
+    start_str = "2014-01-01 00:00:00"
+    fmt = "%Y-%m-%d %H:%M:%S"
+    start_time = int(time.mktime(time.strptime(start_str, fmt)) * 1000)
+    last_open_time = 0  # added this line
 
-#     df = pd.DataFrame()
+    df = pd.DataFrame()
 
-#     while True:
-#         parameters = {
-#             "symbol": "BTCUSDT",
-#             "interval": "1d",
-#             "startTime": start_time,
-#             "limit": 1000,  # maximum limit
-#         }
+    while True:
+        parameters = {
+            "symbol": f"{selected_crypto}USD",
+            "interval": "1d",
+            "startTime": start_time,
+            "limit": 1000,  # maximum limit
+        }
 
-#         response = requests.get(URL, params=parameters)
-#         data = json.loads(response.text)
+        response = requests.get(URL, params=parameters)
+        data = json.loads(response.text)
 
-#         if len(data) == 0 or last_open_time == start_time:  # updated this line
-#             break
+        if len(data) == 0 or last_open_time == start_time:  # updated this line
+            break
 
-#         temp_df = pd.DataFrame(
-#             data,
-#             columns=[
-#                 "Open_time",
-#                 "Open",
-#                 "High",
-#                 "Low",
-#                 "Close",
-#                 "Volume",
-#                 "Close_time",
-#                 "Quote_asset_volume",
-#                 "Number_of_trades",
-#                 "Taker_buy_base",
-#                 "Taker_buy_quote",
-#                 "Ignore",
-#             ],
-#         )
-#         temp_df["Open_time"] = pd.to_datetime(temp_df["Open_time"], unit="ms")
-#         temp_df["Date"] = temp_df["Open_time"].dt.date
-#         temp_df["High"] = temp_df["High"].astype(float)
-#         temp_df["Low"] = temp_df["Low"].astype(float)
-#         temp_df["Last"] = temp_df["Close"].astype(float)
-#         temp_df["Volume"] = temp_df["Volume"].astype(float)
-#         temp_df["Mid"] = (temp_df["High"] + temp_df["Low"]) / 2
-#         temp_df["First"] = temp_df["Last"].shift()
+        temp_df = pd.DataFrame(
+            data,
+            columns=[
+                "Open_time",
+                "Open",
+                "High",
+                "Low",
+                "Close",
+                "Volume",
+                "Close_time",
+                "Quote_asset_volume",
+                "Number_of_trades",
+                "Taker_buy_base",
+                "Taker_buy_quote",
+                "Ignore",
+            ],
+        )
+        temp_df["Open_time"] = pd.to_datetime(temp_df["Open_time"], unit="ms")
+        temp_df["Date"] = temp_df["Open_time"].dt.date
+        temp_df["High"] = temp_df["High"].astype(float)
+        temp_df["Low"] = temp_df["Low"].astype(float)
+        temp_df["Last"] = temp_df["Close"].astype(float)
+        temp_df["Volume"] = temp_df["Volume"].astype(float)
+        temp_df["Mid"] = (temp_df["High"] + temp_df["Low"]) / 2
+        temp_df["First"] = temp_df["Last"].shift()
 
-#         df = pd.concat([df, temp_df])
-#         last_open_time = start_time  # added this line
-#         start_time = (
-#             int(temp_df["Open_time"].dt.to_pydatetime()[-1].timestamp() * 1000) + 1
-#         )
+        df = pd.concat([df, temp_df])
+        last_open_time = start_time  # added this line
+        start_time = (
+            int(temp_df["Open_time"].dt.to_pydatetime()[-1].timestamp() * 1000) + 1
+        )
 
-#     df = df[["Date", "High", "Low", "Mid", "Last", "Volume", "First"]]
-#     df.to_csv("coindata/binance_btcusdt.csv", index=False)
+    df = df[["Date", "High", "Low", "Mid", "Last", "Volume", "First"]]
+    df.to_csv(f"coindata/binance {selected_crypto}USD.csv", index=False)
 
-
-# datasource = "binance_btcusdt.csv"
-# xusd_data = pd.read_csv("coindata/{}".format(datasource), index_col=0)
-# xusd_data.index = pd.to_datetime(xusd_data.index)
-
-# most_recent_stored_btcusd_date = (
-#     xusd_data.sort_index().tail(1).index[0].strftime("%Y-%m-%d")
-# )
-
-# todays_date = datetime.date.today()
-# todays_date = todays_date.strftime("%Y-%m-%d")
-
-# if most_recent_stored_btcusd_date != todays_date:
-#     get_binance_btcusd()
-
-#     xusd_data = pd.read_csv("coindata/{}".format(datasource), index_col=0)
-#     xusd_data.index = pd.to_datetime(xusd_data.index)
-
-# # # # end - read in BINANCE BTC data # # #
-
-
-# # # start - read in BITFINEX data # # #
-
-todays_date = datetime.date.today() - datetime.timedelta(days=1)
-todays_date = todays_date.strftime("%Y-%m-%d")
-
-
-def store_crypto_csv_from_quandl(datasource, todays_date):
-    data = q.get(
-        datasource.split(".")[0],
-        start_date="2016-01-01",
-        end_date="{}".format(todays_date),
-        api_key=quandl_api_key,
-    )
-    data.info()
-    data["First"] = data.Last.shift(1)
-    data.dropna()
-    data = data.sort_index()
-    # store current df with up-to-date values
-    data.to_csv("coindata/{}".format(datasource.replace("/", " ")), index=True)
-
-
-def update_stored_crypto_csv_from_quandl(
-    datasource, xusd_data, most_recent_stored_date, todays_date
-):
-    data = q.get(
-        datasource.split(".")[0],
-        start_date=most_recent_stored_date,
-        end_date="{}".format(todays_date),
-        api_key=quandl_api_key,
-    )
-    data.info()
-    data["First"] = data.Last.shift(1)
-    data.dropna()
-    xusd_data = pd.concat([xusd_data, data])
-    xusd_data = xusd_data.sort_index()
-    # store current df with up-to-date values
-    xusd_data.to_csv("coindata/{}".format(datasource.replace("/", " ")), index=True)
 
 
 cryptos = [
@@ -183,26 +125,114 @@ cryptos = [
     "SAND",
 ]
 selected_crypto = st.selectbox("Select Cryptocurrency", cryptos)
-datasource = f"BITFINEX/{selected_crypto}USD.csv"
+datasource = f"binance/{selected_crypto}USD.csv"
+
+todays_date = datetime.date.today()
+todays_date = todays_date.strftime("%Y-%m-%d")
 
 try:
     xusd_data = pd.read_csv(
         "coindata/{}".format(datasource.replace("/", " ")), index_col=0
     )
 except:
-    store_crypto_csv_from_quandl(datasource, todays_date)
+    get_binance_crypto_usdt(selected_crypto)
     xusd_data = pd.read_csv(
         "coindata/{}".format(datasource.replace("/", " ")), index_col=0
     )
 
-xusd_data.index = pd.to_datetime(xusd_data.index)
-most_recent_stored_date = xusd_data.sort_index().tail(1).index[0].strftime("%Y-%m-%d")
 
-if most_recent_stored_date != todays_date:
-    update_stored_crypto_csv_from_quandl(
-        datasource, xusd_data, most_recent_stored_date, todays_date
-    )
-# # # end - read in BITFINEX data # # #
+
+datasource = f"binance {selected_crypto}USD.csv"
+xusd_data = pd.read_csv("coindata/{}".format(datasource), index_col=0)
+xusd_data.index = pd.to_datetime(xusd_data.index)
+
+most_recent_stored_btcusd_date = (
+    xusd_data.sort_index().tail(1).index[0].strftime("%Y-%m-%d")
+)
+
+
+if most_recent_stored_btcusd_date != todays_date:
+    get_binance_crypto_usdt()
+
+    xusd_data = pd.read_csv("coindata/{}".format(datasource), index_col=0)
+    xusd_data.index = pd.to_datetime(xusd_data.index)
+
+# # # # end - read in BINANCE BTC data # # #
+
+
+# # # # start - read in BITFINEX data # # #
+
+# todays_date = datetime.date.today() - datetime.timedelta(days=1)
+# todays_date = todays_date.strftime("%Y-%m-%d")
+
+
+# def store_crypto_csv_from_quandl(datasource, todays_date):
+#     data = q.get(
+#         datasource.split(".")[0],
+#         start_date="2016-01-01",
+#         end_date="{}".format(todays_date),
+#         api_key=quandl_api_key,
+#     )
+#     data.info()
+#     data["First"] = data.Last.shift(1)
+#     data.dropna()
+#     data = data.sort_index()
+#     # store current df with up-to-date values
+#     data.to_csv("coindata/{}".format(datasource.replace("/", " ")), index=True)
+
+
+# def update_stored_crypto_csv_from_quandl(
+#     datasource, xusd_data, most_recent_stored_date, todays_date
+# ):
+#     data = q.get(
+#         datasource.split(".")[0],
+#         start_date=most_recent_stored_date,
+#         end_date="{}".format(todays_date),
+#         api_key=quandl_api_key,
+#     )
+#     data.info()
+#     data["First"] = data.Last.shift(1)
+#     data.dropna()
+#     xusd_data = pd.concat([xusd_data, data])
+#     xusd_data = xusd_data.sort_index()
+#     # store current df with up-to-date values
+#     xusd_data.to_csv("coindata/{}".format(datasource.replace("/", " ")), index=True)
+
+
+# cryptos = [
+#     "BTC",
+#     "ETH",
+#     "DOGE",
+#     "LINK",
+#     "OP",
+#     "MATIC",
+#     "XRP",
+#     "LTC",
+#     "EOS",
+#     "MANA",
+#     "SAND",
+# ]
+# selected_crypto = st.selectbox("Select Cryptocurrency", cryptos)
+# datasource = f"BITFINEX/{selected_crypto}USD.csv"
+
+# try:
+#     xusd_data = pd.read_csv(
+#         "coindata/{}".format(datasource.replace("/", " ")), index_col=0
+#     )
+# except:
+#     store_crypto_csv_from_quandl(datasource, todays_date)
+#     xusd_data = pd.read_csv(
+#         "coindata/{}".format(datasource.replace("/", " ")), index_col=0
+#     )
+
+# xusd_data.index = pd.to_datetime(xusd_data.index)
+# most_recent_stored_date = xusd_data.sort_index().tail(1).index[0].strftime("%Y-%m-%d")
+
+# if most_recent_stored_date != todays_date:
+#     update_stored_crypto_csv_from_quandl(
+#         datasource, xusd_data, most_recent_stored_date, todays_date
+#     )
+# # # # end - read in BITFINEX data # # #
 
 # # # start - data processing # # #
 xusd_data = xusd_data.dropna()
@@ -262,7 +292,7 @@ fig.update_layout(
 )
 st.plotly_chart(fig)
 
-# this name is only kept for storing and reading the current csv file 
+# this name is only kept for storing and reading the current csv file
 # had to change to the fred api because quandl didnt support it anymore with the following key:
 fed_assets_quandl_key = "FED/RESPPA_N_WW"
 
@@ -278,8 +308,9 @@ todays_date = datetime.date.today() - datetime.timedelta(days=6)
 if most_recent_stored_fed_assets_date.date() < todays_date:
     # Get FED data from fed and store it
     fred = Fred(api_key=api_key_fred)
-    fed_assets_data = fred.get_series('RESPPANWW') 
-
+    fed_assets_data = fred.get_series("RESPPANWW")
+    fed_assets_data.index.name = "Date"
+    fed_assets_data.name = "Value"
     fed_assets_data = fed_assets_data.dropna()
     fed_assets_data = fed_assets_data.sort_index()
     # store current df with up-to-date values
