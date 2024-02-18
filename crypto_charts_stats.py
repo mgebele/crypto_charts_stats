@@ -262,8 +262,10 @@ fig.update_layout(
 )
 st.plotly_chart(fig)
 
-# Get FED data from quandl and store it
+# this name is only kept for storing and reading the current csv file 
+# had to change to the fred api because quandl didnt support it anymore with the following key:
 fed_assets_quandl_key = "FED/RESPPA_N_WW"
+
 fed_assets_data = pd.read_csv(
     "coindata/{}".format(fed_assets_quandl_key.replace("/", " ")), index_col=0
 )
@@ -274,7 +276,10 @@ todays_date = datetime.date.today() - datetime.timedelta(days=6)
 # every wednesday we get the data from the fed
 # Convert pd.Timestamp to datetime.date for comparison
 if most_recent_stored_fed_assets_date.date() < todays_date:
-    fed_assets_data = q.get(fed_assets_quandl_key, api_key=quandl_api_key)
+    # Get FED data from fed and store it
+    fred = Fred(api_key=api_key_fred)
+    fed_assets_data = fred.get_series('RESPPANWW') 
+
     fed_assets_data = fed_assets_data.dropna()
     fed_assets_data = fed_assets_data.sort_index()
     # store current df with up-to-date values
