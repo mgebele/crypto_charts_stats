@@ -51,7 +51,7 @@ _max_width_()
 
 
 # # # start - read in BINANCE BTC data # # # binance only goes back to 2017!
-def get_binance_crypto_usdt(selected_crypto: str = "BTC"):
+def get_binance_crypto_usdt(selected_crypto):
     URL = "https://api.binance.com/api/v3/klines"
     start_str = "2014-01-01 00:00:00"
     fmt = "%Y-%m-%d %H:%M:%S"
@@ -112,8 +112,11 @@ def get_binance_crypto_usdt(selected_crypto: str = "BTC"):
         else:
             break  # If temp_df is empty, we should break from the loop.
 
-    df = df[["Date", "High", "Low", "Mid", "Last", "Volume", "First"]]
-    df.to_csv(f"coindata/binance {selected_crypto}USD.csv", index=False)
+    if not df.empty:
+        df = df[["Date", "High", "Low", "Mid", "Last", "Volume", "First"]]
+        df.to_csv(f"coindata/binance_{selected_crypto}USDT.csv", index=False)
+    else:
+        print(f"No data collected. API response {response}")
 
 
 cryptos = [
