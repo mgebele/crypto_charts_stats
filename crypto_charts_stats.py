@@ -62,7 +62,7 @@ def get_binance_crypto_usdt(selected_crypto):
 
     while True:
         parameters = {
-            "symbol": f"{selected_crypto}USD",
+            "symbol": f"{selected_crypto}USDT",
             "interval": "1d",
             "startTime": start_time,
             "limit": 1000,  # maximum limit
@@ -133,7 +133,7 @@ cryptos = [
     "SAND",
 ]
 selected_crypto = st.selectbox("Select Cryptocurrency", cryptos)
-datasource = f"binance/{selected_crypto}USD.csv"
+datasource = f"binance/{selected_crypto}USDT.csv"
 
 todays_date = datetime.date.today()
 todays_date = todays_date.strftime("%Y-%m-%d")
@@ -149,7 +149,7 @@ except:
     )
 
 
-datasource = f"binance {selected_crypto}USD.csv"
+datasource = f"binance {selected_crypto}USDT.csv"
 xusd_data = pd.read_csv("coindata/{}".format(datasource), index_col=0)
 xusd_data.index = pd.to_datetime(xusd_data.index)
 
