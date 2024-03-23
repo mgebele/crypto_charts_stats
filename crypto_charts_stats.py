@@ -152,7 +152,7 @@ most_recent_stored_btcusd_date = (
 
 
 if most_recent_stored_btcusd_date != todays_date:
-    get_binance_crypto_usdt()
+    get_binance_crypto_usdt(selected_crypto)
 
     xusd_data = pd.read_csv("coindata/{}".format(datasource), index_col=0)
     xusd_data.index = pd.to_datetime(xusd_data.index)
