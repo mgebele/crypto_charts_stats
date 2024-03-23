@@ -51,7 +51,7 @@ _max_width_()
 
 
 # # # start - read in BINANCE BTC data # # # binance only goes back to 2017!
-def get_binance_crypto_usdt(selected_crypto):
+def get_binance_crypto_usdt(selected_crypto: str = "BTC"):
     URL = "https://api.binance.com/api/v3/klines"
     start_str = "2014-01-01 00:00:00"
     fmt = "%Y-%m-%d %H:%M:%S"
@@ -71,7 +71,7 @@ def get_binance_crypto_usdt(selected_crypto):
         response = requests.get(URL, params=parameters)
         data = json.loads(response.text)
 
-        if len(data) == 0 or last_open_time == start_time:  # updated this line
+        if len(data) < 1 or last_open_time == start_time:  # updated this line
             break
 
         temp_df = pd.DataFrame(
@@ -101,14 +101,19 @@ def get_binance_crypto_usdt(selected_crypto):
         temp_df["First"] = temp_df["Last"].shift()
 
         df = pd.concat([df, temp_df])
-        last_open_time = start_time  # added this line
-        start_time = (
-            int(temp_df["Open_time"].dt.to_pydatetime()[-1].timestamp() * 1000) + 1
-        )
+
+        if not temp_df.empty:
+            last_open_time = (
+                start_time  # This line should only run if temp_df is not empty.
+            )
+            start_time = (
+                int(temp_df["Open_time"].dt.to_pydatetime()[-1].timestamp() * 1000) + 1
+            )
+        else:
+            break  # If temp_df is empty, we should break from the loop.
 
     df = df[["Date", "High", "Low", "Mid", "Last", "Volume", "First"]]
     df.to_csv(f"coindata/binance {selected_crypto}USD.csv", index=False)
-
 
 
 cryptos = [
@@ -139,7 +144,6 @@ except:
     xusd_data = pd.read_csv(
         "coindata/{}".format(datasource.replace("/", " ")), index_col=0
     )
-
 
 
 datasource = f"binance {selected_crypto}USD.csv"
