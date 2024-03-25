@@ -51,7 +51,7 @@ _max_width_()
 
 
 # # # start - read in BINANCE BTC data # # # binance only goes back to 2017!
-def get_binance_crypto_usdt(selected_crypto):
+def get_binance_crypto_usdt(selected_crypto : str = "BTC", selected_interval : str = "1d"):
     URL = "https://api.binance.com/api/v3/klines"
     start_str = "2014-01-01 00:00:00"
     fmt = "%Y-%m-%d %H:%M:%S"
@@ -63,7 +63,7 @@ def get_binance_crypto_usdt(selected_crypto):
     while True:
         parameters = {
             "symbol": f"{selected_crypto}USDT",
-            "interval": "1d",
+            "interval": selected_interval,
             "startTime": start_time,
             "limit": 1000,  # maximum limit
         }
